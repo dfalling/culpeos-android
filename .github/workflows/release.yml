@@ -55,19 +55,30 @@ jobs:
           echo "code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
           echo "Building $VERSION_NAME (code $VERSION_CODE)"
 
-      - name: Decode release keystore
+      - name: Install SOPS
+        uses: nhedger/setup-sops@v2
+
+      - name: Decrypt signing secrets
         env:
-          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
         run: |
-          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+          sops -d --output-type json android/release-secrets.enc.yaml > "$RUNNER_TEMP/secrets.json"
+          STORE_PASSWORD=$(jq -r .android_keystore_password "$RUNNER_TEMP/secrets.json")
+          KEY_PASSWORD=$(jq -r .android_key_password "$RUNNER_TEMP/secrets.json")
+          KEY_ALIAS=$(jq -r .android_key_alias "$RUNNER_TEMP/secrets.json")
+          jq -r .android_keystore_base64 "$RUNNER_TEMP/secrets.json" | base64 -d > "$RUNNER_TEMP/release.keystore"
+          # Mask values so they don't leak into logs from later steps.
+          echo "::add-mask::$STORE_PASSWORD"
+          echo "::add-mask::$KEY_PASSWORD"
+          echo "RELEASE_STORE_PASSWORD=$STORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "RELEASE_KEY_PASSWORD=$KEY_PASSWORD" >> "$GITHUB_ENV"
+          echo "RELEASE_KEY_ALIAS=$KEY_ALIAS" >> "$GITHUB_ENV"
+          echo "RELEASE_STORE_FILE=$RUNNER_TEMP/release.keystore" >> "$GITHUB_ENV"
+          rm "$RUNNER_TEMP/secrets.json"
 
       - name: Assemble release APK
         working-directory: android
         env:
-          RELEASE_STORE_FILE: ${{ runner.temp }}/release.keystore
-          RELEASE_STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          RELEASE_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          RELEASE_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
           RELEASE_VERSION_NAME: ${{ steps.version.outputs.name }}
           RELEASE_VERSION_CODE: ${{ steps.version.outputs.code }}
         run: ./gradlew assembleRelease --no-daemon --stacktrace
