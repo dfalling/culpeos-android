@@ -1,34 +1,50 @@
-# Gradle files
-.gradle/
+# OSX
+.DS_Store
+
+# Android / Gradle
 build/
-
-# Local configuration file (sdk path, etc)
+.gradle/
+.kotlin/
 local.properties
-
-# Log/OS Files
-*.log
-
-# Android Studio generated files and folders
 captures/
 .externalNativeBuild/
 .cxx/
-*.aab
-*.apk
-output-metadata.json
-
-# IntelliJ
 *.iml
 .idea/
 misc.xml
 deploymentTargetDropDown.xml
 render.experimental.xml
+*.hprof
+*.log
 
-# Keystore files
+# Build outputs
+*.apk
+*.aab
+*.jsbundle
+output-metadata.json
+
+# Signing — never commit keystores or passwords
 *.jks
 *.keystore
+!debug.keystore
+keystore.properties
+release.keystore.b64
 
-# Google Services (e.g. APIs or Firebase)
+# Google services (we don't use these on GrapheneOS, but block them just in case)
 google-services.json
 
-# Android Profiling
-*.hprof
+# Node / Bun
+node_modules/
+npm-debug.log
+yarn-error.log
+# Lockfile is bun.lock — keep package-lock.json out so it can't drift
+package-lock.json
+
+# Metro
+.metro-health-check*
+
+# Test coverage
+/coverage
+
+# GraphQL — generated TS is committed; ignore introspection dumps
+/schema.json

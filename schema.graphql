@@ -1,0 +1,15 @@
+# Placeholder schema for GraphQL codegen.
+#
+# Replace this file with your Phoenix/Absinthe schema. Two easy options:
+#
+#   1) Introspect the running API:
+#        npx get-graphql-schema http://localhost:4000/api/graphql > schema.graphql
+#
+#   2) Have the backend dump SDL on build and commit it here.
+#
+# Until the backend is wired up, the type below exists so `npm run codegen`
+# succeeds and the wiring stays exercised.
+
+type Query {
+  ping: String!
+}
