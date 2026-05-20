@@ -111,7 +111,8 @@ android {
         release {
             // Use the release signing config when a keystore is configured (CI / local release builds).
             // Falls back to the debug keystore so `assembleRelease` still works for smoke tests.
-            signingConfig (System.getenv('RELEASE_STORE_FILE') || project.findProperty('RELEASE_STORE_FILE')) ? signingConfigs.release : signingConfigs.debug
+            def hasReleaseKeystore = System.getenv('RELEASE_STORE_FILE') || project.findProperty('RELEASE_STORE_FILE')
+            signingConfig hasReleaseKeystore ? signingConfigs.release : signingConfigs.debug
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }
