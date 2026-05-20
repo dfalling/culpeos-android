@@ -1,0 +1,10 @@
+# Tool versions for this project, managed by mise (https://mise.jdx.dev).
+# Run `mise install` after cloning to install everything.
+
+[tools]
+# Pinned to match .github/workflows/ci.yml so local builds match CI.
+# Node stays alongside bun because Metro and Gradle's react.gradle plugin
+# shell out to `node` directly — bun is the package manager, not the runtime.
+node = "22"
+bun = "1.2"
+java = "zulu-17"
