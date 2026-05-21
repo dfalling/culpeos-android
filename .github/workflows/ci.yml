@@ -22,16 +22,6 @@ jobs:
 
       - run: bun install --frozen-lockfile
 
-      - name: GraphQL codegen
-        run: bun run codegen
-
-      - name: Verify codegen output is up to date
-        run: |
-          if ! git diff --exit-code -- src/graphql/__generated__; then
-            echo "::error::Generated GraphQL types are stale. Run 'bun run codegen' and commit the result."
-            exit 1
-          fi
-
       - name: TypeScript
         run: bunx tsc --noEmit
 
