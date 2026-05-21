@@ -46,5 +46,7 @@ package-lock.json
 # Test coverage
 /coverage
 
-# GraphQL — generated TS is committed; ignore introspection dumps
+# GraphQL — generated TS is committed; the schema itself is NOT (public repo,
+# don't leak full introspection). Pass its path/URL to `bun run codegen`.
 /schema.json
+/schema.graphql

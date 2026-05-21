@@ -1,12 +1,19 @@
 import type {CodegenConfig} from '@graphql-codegen/cli';
 
-// Point `schema` at your Phoenix GraphQL endpoint or a local SDL file.
-// For early development we use a checked-in placeholder schema. Once the
-// Phoenix API is reachable, swap this for the URL form, e.g.
-//   schema: { 'http://localhost:4000/api/graphql': { headers: {} } }
+// Schema is not committed (public repo — don't leak full introspection).
+// Pass a path or URL as the last arg to `bun run codegen`:
+//   bun run codegen ./schema.graphql
+//   bun run codegen http://localhost:4000/api/graphql
+const schema = process.argv.find(
+  (a, i) => i > 1 && !a.startsWith('-') && process.argv[i - 1] !== '--config',
+);
+if (!schema) {
+  throw new Error('Usage: bun run codegen <path-or-url-to-schema>');
+}
+
 const config: CodegenConfig = {
   overwrite: true,
-  schema: 'schema.graphql',
+  schema,
   documents: ['src/**/*.graphql', 'src/**/*.{ts,tsx}'],
   generates: {
     'src/graphql/__generated__/types.ts': {
