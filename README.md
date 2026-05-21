@@ -148,21 +148,16 @@ Reload the app on device with `R` twice (emulator) or shake (physical device).
 ## GraphQL codegen
 
 Queries/mutations live alongside the code they're used in (`src/**/*.graphql`).
-The schema lives in `schema.graphql` at the repo root — currently a placeholder;
-replace it once the Phoenix API is reachable:
+The schema itself is **not** committed — this is a public repo, so we don't
+leak full introspection. Pass a path or URL as a positional arg:
 
 ```sh
-# from this directory, with the Phoenix server running:
+# dump SDL locally (gitignored) and point codegen at it:
 bunx get-graphql-schema http://localhost:4000/api/graphql > schema.graphql
-```
+bun run codegen ./schema.graphql
 
-Or point `codegen.ts` directly at the URL — see the comment at the top of that file.
-
-Generate types and React hooks:
-
-```sh
-bun run codegen        # one-shot
-bun run codegen:watch  # rebuild on schema or .graphql changes
+# or hit the running endpoint directly:
+bun run codegen http://localhost:4000/api/graphql
 ```
 
 Output: `src/graphql/__generated__/types.ts` — committed to the repo. CI fails any
@@ -282,8 +277,7 @@ src/graphql/
   client.ts                    Apollo Client setup
   queries/*.graphql            Operations
   __generated__/types.ts       Codegen output (committed)
-schema.graphql                 GraphQL SDL (replace with backend's real schema)
-codegen.ts                     graphql-codegen config
+codegen.ts                     graphql-codegen config (schema path passed as arg)
 App.tsx                        Root component, wraps ApolloProvider
 biome.json                     Biome lint + format config
 mise.toml                      Toolchain versions (Node, Bun, JDK)
