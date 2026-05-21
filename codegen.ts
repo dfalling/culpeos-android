@@ -1,14 +1,12 @@
 import type {CodegenConfig} from '@graphql-codegen/cli';
 
-// Schema is not committed (public repo — don't leak full introspection).
-// Pass a path or URL as the last arg to `bun run codegen`:
+// Schema is not committed (public repo). Pass a local SDL path as the last arg:
 //   bun run codegen ./schema.graphql
-//   bun run codegen http://localhost:4000/api/graphql
 const schema = process.argv.find(
   (a, i) => i > 1 && !a.startsWith('-') && process.argv[i - 1] !== '--config',
 );
 if (!schema) {
-  throw new Error('Usage: bun run codegen <path-or-url-to-schema>');
+  throw new Error('Usage: bun run codegen <path-to-schema.graphql>');
 }
 
 const config: CodegenConfig = {

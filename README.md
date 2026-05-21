@@ -149,15 +149,10 @@ Reload the app on device with `R` twice (emulator) or shake (physical device).
 
 Queries/mutations live alongside the code they're used in (`src/**/*.graphql`).
 The schema itself is **not** committed — this is a public repo, so we don't
-leak full introspection. Pass a path or URL as a positional arg:
+leak it. Drop an SDL file somewhere (gitignored) and pass its path:
 
 ```sh
-# dump SDL locally (gitignored) and point codegen at it:
-bunx get-graphql-schema http://localhost:4000/api/graphql > schema.graphql
 bun run codegen ./schema.graphql
-
-# or hit the running endpoint directly:
-bun run codegen http://localhost:4000/api/graphql
 ```
 
 Output: `src/graphql/__generated__/types.ts` — committed to the repo. CI
