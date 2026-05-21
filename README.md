@@ -160,9 +160,9 @@ bun run codegen ./schema.graphql
 bun run codegen http://localhost:4000/api/graphql
 ```
 
-Output: `src/graphql/__generated__/types.ts` — committed to the repo. CI fails any
-PR where the generated output is stale (you forgot to commit after editing a
-`.graphql` file).
+Output: `src/graphql/__generated__/types.ts` — committed to the repo. CI
+doesn't run codegen (no schema in CI), so remember to regenerate and commit
+after editing a `.graphql` file.
 
 Example of using a generated hook:
 
@@ -261,7 +261,7 @@ sandboxed Play Services to install or run.
 ## CI
 
 `.github/workflows/ci.yml` runs on every PR and push to `main`:
-- **`js` job**: `bun install` → codegen → stale-output check → `tsc --noEmit` → biome (lint + format) → jest.
+- **`js` job**: `bun install` → `tsc --noEmit` → biome (lint + format) → jest.
 - **`android` job**: JDK 17 + Gradle → `./gradlew assembleDebug`.
 
 Both run in parallel.
