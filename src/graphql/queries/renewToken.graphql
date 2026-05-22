@@ -1,0 +1,12 @@
+mutation RenewToken($input: RenewTokenInput!) {
+  renewToken(input: $input) {
+    accessToken
+    refreshToken
+    expiresAt
+    user {
+      id
+      email
+      locale
+    }
+  }
+}

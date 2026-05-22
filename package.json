@@ -12,12 +12,13 @@
     "codegen": "graphql-codegen --config codegen.ts"
   },
   "dependencies": {
+    "@apollo/client": "^3.11.0",
+    "@react-native/new-app-screen": "0.85.3",
+    "graphql": "^16.9.0",
     "react": "19.2.3",
     "react-native": "0.85.3",
-    "@react-native/new-app-screen": "0.85.3",
-    "react-native-safe-area-context": "^5.5.2",
-    "@apollo/client": "^3.11.0",
-    "graphql": "^16.9.0"
+    "react-native-encrypted-storage": "^4.0.3",
+    "react-native-safe-area-context": "^5.5.2"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

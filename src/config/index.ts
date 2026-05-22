@@ -1,6 +1,7 @@
 // Environment configuration. `__DEV__` is true in Metro/debug builds and
-// false in release builds, so dev defaults to localhost and release points
-// at production.
+// false in release builds, so dev defaults to the host machine (via the
+// Android emulator's 10.0.2.2 loopback alias) and release points at
+// production.
 
 type EnvConfig = {
   apiUrl: string;
@@ -9,12 +10,12 @@ type EnvConfig = {
 
 const production: EnvConfig = {
   apiUrl: 'https://www.culpeos.com',
-  graphqlUrl: 'https://www.culpeos.com/api/graphql',
+  graphqlUrl: 'https://www.culpeos.com/graphql/v1',
 };
 
 const development: EnvConfig = {
-  apiUrl: 'http://localhost:4000',
-  graphqlUrl: 'http://localhost:4000/api/graphql',
+  apiUrl: 'http://10.0.2.2:4000',
+  graphqlUrl: 'http://10.0.2.2:4000/graphql/v1',
 };
 
 export const config: EnvConfig = __DEV__ ? development : production;
