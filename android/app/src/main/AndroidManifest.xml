@@ -22,6 +22,20 @@
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
+        <!-- App Links: open culpeos.com confirm/reset emails in this app.
+             Requires /.well-known/assetlinks.json on the server to list the
+             signing keystore's SHA-256 fingerprint for com.culpeos.app. -->
+        <intent-filter android:autoVerify="true">
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="https"
+                  android:host="www.culpeos.com"
+                  android:pathPrefix="/users/confirm/" />
+            <data android:scheme="https"
+                  android:host="www.culpeos.com"
+                  android:pathPrefix="/users/reset_password/" />
+        </intent-filter>
       </activity>
     </application>
 </manifest>
