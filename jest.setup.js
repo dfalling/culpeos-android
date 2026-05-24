@@ -10,7 +10,7 @@ jest.mock('react-native-encrypted-storage', () => ({
 
 jest.mock('@maplibre/maplibre-react-native', () => {
   const React = require('react');
-  const passthrough = (name) => {
+  const passthrough = name => {
     const Component = React.forwardRef(({children}, _ref) =>
       React.createElement('View', {testID: name}, children),
     );
