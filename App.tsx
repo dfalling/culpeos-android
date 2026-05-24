@@ -5,7 +5,6 @@
  */
 
 import {ApolloProvider} from '@apollo/client';
-import {NewAppScreen} from '@react-native/new-app-screen';
 import {useEffect} from 'react';
 import {
   ActivityIndicator,
@@ -24,6 +23,7 @@ import {apolloClient, logout} from './src/auth/authClient';
 import {useDeepLinkListener} from './src/auth/deepLinks';
 import {LoginScreen} from './src/auth/LoginScreen';
 import {tokenStore, useAuth, useAuthHydrated} from './src/auth/tokenStore';
+import {MapScreen} from './src/map/MapScreen';
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
@@ -63,10 +63,7 @@ function AppContent() {
 
   return (
     <View style={styles.container}>
-      <NewAppScreen
-        templateFileName="App.tsx"
-        safeAreaInsets={safeAreaInsets}
-      />
+      <MapScreen />
       <View
         style={[styles.logoutBar, {paddingBottom: safeAreaInsets.bottom + 12}]}>
         <Text style={styles.signedInAs}>Signed in as {auth.user.email}</Text>

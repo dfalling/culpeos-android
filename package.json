@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@apollo/client": "^3.11.0",
+    "@maplibre/maplibre-react-native": "^11.2.1",
     "@react-native/new-app-screen": "0.85.3",
     "graphql": "^16.9.0",
     "react": "19.2.3",
