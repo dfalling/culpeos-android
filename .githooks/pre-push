@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "→ tsc --noEmit"
+bunx tsc --noEmit
+
+echo "→ biome check"
+bun run lint
