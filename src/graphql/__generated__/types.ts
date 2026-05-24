@@ -536,6 +536,13 @@ export type User = {
   locale?: Maybe<Scalars['String']['output']>;
 };
 
+export type ElementsQueryVariables = Exact<{
+  bounds?: InputMaybe<GeoBounds>;
+}>;
+
+
+export type ElementsQuery = { __typename?: 'RootQueryType', elements: Array<{ __typename?: 'Element', id: string, name: string, icon: string, location?: { __typename?: 'Location', id: string, latitude: number, longitude: number } | null }> };
+
 export type LoginMutationVariables = Exact<{
   input: LoginInput;
 }>;
@@ -558,6 +565,56 @@ export type RenewTokenMutationVariables = Exact<{
 export type RenewTokenMutation = { __typename?: 'RootMutationType', renewToken: { __typename?: 'LoginToken', accessToken: string, refreshToken: string, expiresAt: any, user: { __typename?: 'User', id: string, email: string, locale?: string | null } } };
 
 
+export const ElementsDocument = gql`
+    query Elements($bounds: GeoBounds) {
+  elements(bounds: $bounds) {
+    id
+    name
+    icon
+    location {
+      id
+      latitude
+      longitude
+    }
+  }
+}
+    `;
+
+/**
+ * __useElementsQuery__
+ *
+ * To run a query within a React component, call `useElementsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useElementsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useElementsQuery({
+ *   variables: {
+ *      bounds: // value for 'bounds'
+ *   },
+ * });
+ */
+export function useElementsQuery(baseOptions?: Apollo.QueryHookOptions<ElementsQuery, ElementsQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<ElementsQuery, ElementsQueryVariables>(ElementsDocument, options);
+      }
+export function useElementsLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<ElementsQuery, ElementsQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<ElementsQuery, ElementsQueryVariables>(ElementsDocument, options);
+        }
+// @ts-ignore
+export function useElementsSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<ElementsQuery, ElementsQueryVariables>): Apollo.UseSuspenseQueryResult<ElementsQuery, ElementsQueryVariables>;
+export function useElementsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ElementsQuery, ElementsQueryVariables>): Apollo.UseSuspenseQueryResult<ElementsQuery | undefined, ElementsQueryVariables>;
+export function useElementsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ElementsQuery, ElementsQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<ElementsQuery, ElementsQueryVariables>(ElementsDocument, options);
+        }
+export type ElementsQueryHookResult = ReturnType<typeof useElementsQuery>;
+export type ElementsLazyQueryHookResult = ReturnType<typeof useElementsLazyQuery>;
+export type ElementsSuspenseQueryHookResult = ReturnType<typeof useElementsSuspenseQuery>;
+export type ElementsQueryResult = Apollo.QueryResult<ElementsQuery, ElementsQueryVariables>;
 export const LoginDocument = gql`
     mutation Login($input: LoginInput!) {
   login(input: $input) {
