@@ -1,0 +1,12 @@
+query Elements($bounds: GeoBounds) {
+  elements(bounds: $bounds) {
+    id
+    name
+    icon
+    location {
+      id
+      latitude
+      longitude
+    }
+  }
+}
