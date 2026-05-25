@@ -8,13 +8,16 @@ import {
   useCurrentPosition,
   type ViewStateChangeEvent,
 } from '@maplibre/maplibre-react-native';
-import {useCallback, useEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import type {NativeSyntheticEvent} from 'react-native';
-import {StyleSheet, Text, View} from 'react-native';
+import {ActivityIndicator, StyleSheet, Text, View} from 'react-native';
 import {
+  type ElementsQuery,
   type ElementsQueryVariables,
   useElementsQuery,
 } from '../graphql/__generated__/types';
+
+type ElementWithLocation = ElementsQuery['elements'][number];
 
 const MAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
 const USER_ZOOM = 14;
@@ -67,6 +70,26 @@ export function MapScreen() {
     variables: bounds ? {bounds} : undefined,
   });
 
+  // Accumulate elements across viewport fetches so pins persist while a new
+  // search is in flight. Fine for our small per-user dataset; revisit if we
+  // ever need eviction or to reflect server-side deletes.
+  const [elementsById, setElementsById] = useState<
+    ReadonlyMap<string, ElementWithLocation>
+  >(new Map());
+  useEffect(() => {
+    if (!data?.elements) return;
+    setElementsById(prev => {
+      const next = new Map(prev);
+      for (const el of data.elements) next.set(el.id, el);
+      return next;
+    });
+  }, [data?.elements]);
+
+  const elements = useMemo(
+    () => Array.from(elementsById.values()),
+    [elementsById],
+  );
+
   return (
     <View style={styles.container}>
       <MapLibreMap
@@ -75,7 +98,7 @@ export function MapScreen() {
         onRegionDidChange={onRegionDidChange}>
         <Camera ref={cameraRef} initialViewState={{center: [0, 20], zoom: 1}} />
         <UserLocation animated accuracy />
-        {data?.elements.map(el =>
+        {elements.map(el =>
           el.location ? (
             <Marker
               key={el.id}
@@ -88,6 +111,11 @@ export function MapScreen() {
           ) : null,
         )}
       </MapLibreMap>
+      {!position ? (
+        <View pointerEvents="none" style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#1d6fe0" />
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -113,5 +141,15 @@ const styles = StyleSheet.create({
     fontSize: 18,
     lineHeight: 22,
     textAlign: 'center',
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.6)',
   },
 });
