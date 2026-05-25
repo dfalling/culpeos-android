@@ -85,10 +85,18 @@ export function MapScreen() {
     });
   }, [data?.elements]);
 
-  const elements = useMemo(
-    () => Array.from(elementsById.values()),
-    [elementsById],
-  );
+  // Only render markers whose location falls inside the last-known viewport.
+  // <Marker> is a native View — rendering offscreen ones still costs layout
+  // and reprojection on every camera frame, so we cull client-side.
+  const visibleElements = useMemo(() => {
+    if (!bounds) return [];
+    const {left, right, bottom, top} = bounds;
+    return Array.from(elementsById.values()).filter(el => {
+      if (!el.location) return false;
+      const {longitude: lng, latitude: lat} = el.location;
+      return lng >= left && lng <= right && lat >= bottom && lat <= top;
+    });
+  }, [elementsById, bounds]);
 
   return (
     <View style={styles.container}>
@@ -98,7 +106,7 @@ export function MapScreen() {
         onRegionDidChange={onRegionDidChange}>
         <Camera ref={cameraRef} initialViewState={{center: [0, 20], zoom: 1}} />
         <UserLocation animated accuracy />
-        {elements.map(el =>
+        {visibleElements.map(el =>
           el.location ? (
             <Marker
               key={el.id}
