@@ -10,7 +10,14 @@ import {
 } from '@maplibre/maplibre-react-native';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import type {NativeSyntheticEvent} from 'react-native';
-import {ActivityIndicator, StyleSheet, Text, View} from 'react-native';
+import {
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
   type ElementsQuery,
   type ElementsQueryVariables,
@@ -21,11 +28,19 @@ type ElementWithLocation = ElementsQuery['elements'][number];
 
 const MAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
 const USER_ZOOM = 14;
+// Show the recenter button once the viewport center drifts more than this
+// fraction of the visible span away from the user in either axis.
+const OFF_CENTER_THRESHOLD = 0.2;
+// Vertical clearance above the device safe area so the recenter button sits
+// above the app's bottom "signed in as…" bar in App.tsx. Keep in sync if that
+// bar's height changes.
+const BOTTOM_BAR_CLEARANCE = 64;
 
 export function MapScreen() {
   const cameraRef = useRef<CameraRef>(null);
   const hasCenteredRef = useRef(false);
   const [permissionGranted, setPermissionGranted] = useState(false);
+  const safeAreaInsets = useSafeAreaInsets();
 
   useEffect(() => {
     let cancelled = false;
@@ -41,18 +56,27 @@ export function MapScreen() {
   }, []);
 
   const position = useCurrentPosition({enabled: permissionGranted});
+  const positionRef = useRef(position);
+  positionRef.current = position;
+
+  const flyToUser = useCallback(() => {
+    const pos = positionRef.current;
+    if (!pos) return;
+    cameraRef.current?.flyTo({
+      center: [pos.coords.longitude, pos.coords.latitude],
+      zoom: USER_ZOOM,
+      duration: 1500,
+    });
+  }, []);
 
   useEffect(() => {
     if (hasCenteredRef.current || !position) return;
     hasCenteredRef.current = true;
-    cameraRef.current?.flyTo({
-      center: [position.coords.longitude, position.coords.latitude],
-      zoom: USER_ZOOM,
-      duration: 1500,
-    });
-  }, [position]);
+    flyToUser();
+  }, [position, flyToUser]);
 
   const [bounds, setBounds] = useState<ElementsQueryVariables['bounds']>();
+  const [isCenteredOnUser, setIsCenteredOnUser] = useState(true);
 
   const onRegionDidChange = useCallback(
     (event: NativeSyntheticEvent<ViewStateChangeEvent>) => {
@@ -61,6 +85,17 @@ export function MapScreen() {
       if (!hasCenteredRef.current) return;
       const [west, south, east, north] = event.nativeEvent.bounds;
       setBounds({left: west, bottom: south, right: east, top: north});
+
+      const pos = positionRef.current;
+      if (!pos) return;
+      const [centerLng, centerLat] = event.nativeEvent.center;
+      const spanLng = east - west;
+      const spanLat = north - south;
+      const offLng = Math.abs(centerLng - pos.coords.longitude) / spanLng;
+      const offLat = Math.abs(centerLat - pos.coords.latitude) / spanLat;
+      setIsCenteredOnUser(
+        offLng <= OFF_CENTER_THRESHOLD && offLat <= OFF_CENTER_THRESHOLD,
+      );
     },
     [],
   );
@@ -124,6 +159,18 @@ export function MapScreen() {
           <ActivityIndicator size="large" color="#1d6fe0" />
         </View>
       ) : null}
+      {position && !isCenteredOnUser ? (
+        <TouchableOpacity
+          accessibilityLabel="Recenter map on your location"
+          accessibilityRole="button"
+          onPress={flyToUser}
+          style={[
+            styles.recenterButton,
+            {bottom: safeAreaInsets.bottom + BOTTOM_BAR_CLEARANCE},
+          ]}>
+          <Text style={styles.recenterIcon}>◎</Text>
+        </TouchableOpacity>
+      ) : null}
     </View>
   );
 }
@@ -159,5 +206,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(255,255,255,0.6)',
+  },
+  recenterButton: {
+    position: 'absolute',
+    right: 16,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#ffffff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    shadowOffset: {width: 0, height: 2},
+    elevation: 4,
+  },
+  recenterIcon: {
+    fontSize: 24,
+    lineHeight: 28,
+    color: '#1d6fe0',
   },
 });
