@@ -23,11 +23,13 @@ import {
   type ElementsQueryVariables,
   useElementsQuery,
 } from '../graphql/__generated__/types';
+import {type Viewport, viewportStore} from './viewportStore';
 
 type ElementWithLocation = ElementsQuery['elements'][number];
 
 const MAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
 const USER_ZOOM = 14;
+const DEFAULT_INITIAL_VIEW = {center: [0, 20] as [number, number], zoom: 1};
 // Show the recenter button once the viewport center drifts more than this
 // fraction of the visible span away from the user in either axis.
 const OFF_CENTER_THRESHOLD = 0.2;
@@ -38,9 +40,29 @@ const BOTTOM_BAR_CLEARANCE = 64;
 
 export function MapScreen() {
   const cameraRef = useRef<CameraRef>(null);
-  const hasCenteredRef = useRef(false);
+  // Gate the bounds fetch + viewport-save until we know the map is sitting on
+  // a real location — either a restored viewport or a fly-to-user. Prevents
+  // the initial zoom-1 world frame from triggering a fetch of every element.
+  const hasSettledRef = useRef(false);
   const [permissionGranted, setPermissionGranted] = useState(false);
+  const [savedViewport, setSavedViewport] = useState<
+    Viewport | null | undefined
+  >(undefined);
   const safeAreaInsets = useSafeAreaInsets();
+
+  useEffect(() => {
+    let cancelled = false;
+    viewportStore.load().then(v => {
+      if (cancelled) return;
+      // Open the gate synchronously so the first region-did-change after the
+      // map mounts at the restored viewport is allowed through.
+      if (v) hasSettledRef.current = true;
+      setSavedViewport(v);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -69,36 +91,63 @@ export function MapScreen() {
     });
   }, []);
 
+  // First-launch fallback: with nothing to restore, fly to the user when their
+  // position becomes available. Once a saved viewport exists this branch is
+  // never taken — the recenter button is how the user goes to themselves.
   useEffect(() => {
-    if (hasCenteredRef.current || !position) return;
-    hasCenteredRef.current = true;
+    if (
+      hasSettledRef.current ||
+      !position ||
+      savedViewport === undefined ||
+      savedViewport !== null
+    ) {
+      return;
+    }
+    hasSettledRef.current = true;
     flyToUser();
-  }, [position, flyToUser]);
+  }, [position, savedViewport, flyToUser]);
 
   const [bounds, setBounds] = useState<ElementsQueryVariables['bounds']>();
-  const [isCenteredOnUser, setIsCenteredOnUser] = useState(true);
+  const [viewportState, setViewportState] = useState<{
+    centerLng: number;
+    centerLat: number;
+    spanLng: number;
+    spanLat: number;
+  } | null>(null);
 
   const onRegionDidChange = useCallback(
     (event: NativeSyntheticEvent<ViewStateChangeEvent>) => {
-      // Skip viewport events until we've flown to the user's location, so
-      // we don't fetch the entire world at the initial zoom-1 framing.
-      if (!hasCenteredRef.current) return;
+      if (!hasSettledRef.current) return;
       const [west, south, east, north] = event.nativeEvent.bounds;
-      setBounds({left: west, bottom: south, right: east, top: north});
-
-      const pos = positionRef.current;
-      if (!pos) return;
       const [centerLng, centerLat] = event.nativeEvent.center;
-      const spanLng = east - west;
-      const spanLat = north - south;
-      const offLng = Math.abs(centerLng - pos.coords.longitude) / spanLng;
-      const offLat = Math.abs(centerLat - pos.coords.latitude) / spanLat;
-      setIsCenteredOnUser(
-        offLng <= OFF_CENTER_THRESHOLD && offLat <= OFF_CENTER_THRESHOLD,
-      );
+      setBounds({left: west, bottom: south, right: east, top: north});
+      setViewportState({
+        centerLng,
+        centerLat,
+        spanLng: east - west,
+        spanLat: north - south,
+      });
+      viewportStore.save({
+        center: [centerLng, centerLat],
+        zoom: event.nativeEvent.zoom,
+      });
     },
     [],
   );
+
+  // Derived: is the user's location near the viewport center? When unknown
+  // (no position yet, or map hasn't reported a region), treat as centered so
+  // the recenter button stays hidden until we have real data to compare.
+  const isCenteredOnUser = useMemo(() => {
+    if (!position || !viewportState) return true;
+    const offLng =
+      Math.abs(viewportState.centerLng - position.coords.longitude) /
+      viewportState.spanLng;
+    const offLat =
+      Math.abs(viewportState.centerLat - position.coords.latitude) /
+      viewportState.spanLat;
+    return offLng <= OFF_CENTER_THRESHOLD && offLat <= OFF_CENTER_THRESHOLD;
+  }, [position, viewportState]);
 
   const {data} = useElementsQuery({
     skip: !bounds,
@@ -133,13 +182,25 @@ export function MapScreen() {
     });
   }, [elementsById, bounds]);
 
+  if (savedViewport === undefined) {
+    return (
+      <View style={[styles.container, styles.hydrating]}>
+        <ActivityIndicator size="large" color="#1d6fe0" />
+      </View>
+    );
+  }
+
+  const initialViewState = savedViewport
+    ? {center: savedViewport.center, zoom: savedViewport.zoom}
+    : DEFAULT_INITIAL_VIEW;
+
   return (
     <View style={styles.container}>
       <MapLibreMap
         mapStyle={MAP_STYLE}
         style={styles.map}
         onRegionDidChange={onRegionDidChange}>
-        <Camera ref={cameraRef} initialViewState={{center: [0, 20], zoom: 1}} />
+        <Camera ref={cameraRef} initialViewState={initialViewState} />
         <UserLocation animated accuracy />
         {visibleElements.map(el =>
           el.location ? (
@@ -154,7 +215,7 @@ export function MapScreen() {
           ) : null,
         )}
       </MapLibreMap>
-      {!position ? (
+      {!savedViewport && !position ? (
         <View pointerEvents="none" style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color="#1d6fe0" />
         </View>
@@ -181,6 +242,10 @@ const styles = StyleSheet.create({
   },
   map: {
     flex: 1,
+  },
+  hydrating: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   pin: {
     width: 36,
