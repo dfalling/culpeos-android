@@ -10,13 +10,7 @@ import {
 } from '@maplibre/maplibre-react-native';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import type {NativeSyntheticEvent} from 'react-native';
-import {
-  ActivityIndicator,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
   type ElementsQuery,
@@ -182,12 +176,11 @@ export function MapScreen() {
     });
   }, [elementsById, bounds]);
 
+  // Brief blank frame while the saved viewport hydrates from storage; the
+  // camera's initialViewState is set once, so we wait for the resolved value
+  // rather than rendering the map at the default world view first.
   if (savedViewport === undefined) {
-    return (
-      <View style={[styles.container, styles.hydrating]}>
-        <ActivityIndicator size="large" color="#1d6fe0" />
-      </View>
-    );
+    return <View style={styles.container} />;
   }
 
   const initialViewState = savedViewport
@@ -215,11 +208,6 @@ export function MapScreen() {
           ) : null,
         )}
       </MapLibreMap>
-      {!savedViewport && !position ? (
-        <View pointerEvents="none" style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#1d6fe0" />
-        </View>
-      ) : null}
       {position && !isCenteredOnUser ? (
         <TouchableOpacity
           accessibilityLabel="Recenter map on your location"
@@ -243,10 +231,6 @@ const styles = StyleSheet.create({
   map: {
     flex: 1,
   },
-  hydrating: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   pin: {
     width: 36,
     height: 36,
@@ -261,16 +245,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     lineHeight: 22,
     textAlign: 'center',
-  },
-  loadingOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.6)',
   },
   recenterButton: {
     position: 'absolute',
