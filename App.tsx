@@ -5,9 +5,10 @@
  */
 
 import {ApolloProvider} from '@apollo/client';
-import {useEffect} from 'react';
+import {useEffect, useState} from 'react';
 import {
   ActivityIndicator,
+  Modal,
   Pressable,
   StatusBar,
   StyleSheet,
@@ -22,7 +23,12 @@ import {
 import {apolloClient, logout} from './src/auth/authClient';
 import {useDeepLinkListener} from './src/auth/deepLinks';
 import {LoginScreen} from './src/auth/LoginScreen';
-import {tokenStore, useAuth, useAuthHydrated} from './src/auth/tokenStore';
+import {
+  type AuthUser,
+  tokenStore,
+  useAuth,
+  useAuthHydrated,
+} from './src/auth/tokenStore';
 import {MapScreen} from './src/map/MapScreen';
 
 function App() {
@@ -41,7 +47,6 @@ function App() {
 function AppContent() {
   const hydrated = useAuthHydrated();
   const auth = useAuth();
-  const safeAreaInsets = useSafeAreaInsets();
 
   useDeepLinkListener();
 
@@ -64,22 +69,60 @@ function AppContent() {
   return (
     <View style={styles.container}>
       <MapScreen />
-      <View
-        style={[styles.logoutBar, {paddingBottom: safeAreaInsets.bottom + 12}]}>
-        <Text style={styles.signedInAs}>Signed in as {auth.user.email}</Text>
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => {
-            logout();
-          }}
-          style={({pressed}) => [
-            styles.logoutButton,
-            pressed && styles.logoutPressed,
-          ]}>
-          <Text style={styles.logoutText}>Log out</Text>
-        </Pressable>
-      </View>
+      <AccountMenu user={auth.user} />
     </View>
+  );
+}
+
+function AccountMenu({user}: {user: AuthUser}) {
+  const safeAreaInsets = useSafeAreaInsets();
+  const [open, setOpen] = useState(false);
+
+  const initial = user.email.trim().charAt(0).toUpperCase() || '?';
+
+  return (
+    <>
+      <Pressable
+        accessibilityLabel="Account menu"
+        accessibilityRole="button"
+        onPress={() => setOpen(true)}
+        style={({pressed}) => [
+          styles.avatarButton,
+          {top: safeAreaInsets.top + 12},
+          pressed && styles.avatarPressed,
+        ]}>
+        <Text style={styles.avatarText}>{initial}</Text>
+      </Pressable>
+      <Modal
+        animationType="slide"
+        transparent
+        visible={open}
+        onRequestClose={() => setOpen(false)}>
+        <Pressable style={styles.sheetBackdrop} onPress={() => setOpen(false)}>
+          <View
+            style={[styles.sheet, {paddingBottom: safeAreaInsets.bottom + 12}]}
+            // Stop taps inside the sheet from dismissing it via the backdrop.
+            onStartShouldSetResponder={() => true}>
+            <View style={styles.sheetHandle} />
+            <Text style={styles.sheetEmail} numberOfLines={1}>
+              {user.email}
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => {
+                setOpen(false);
+                logout();
+              }}
+              style={({pressed}) => [
+                styles.sheetItem,
+                pressed && styles.sheetItemPressed,
+              ]}>
+              <Text style={styles.sheetItemText}>Log out</Text>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
+    </>
   );
 }
 
@@ -91,35 +134,63 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  logoutBar: {
+  avatarButton: {
     position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    backgroundColor: 'rgba(255,255,255,0.95)',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#ccc',
-    flexDirection: 'row',
+    right: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#1d6fe0',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    shadowOffset: {width: 0, height: 2},
+    elevation: 4,
   },
-  signedInAs: {
-    fontSize: 12,
-    color: '#444',
+  avatarPressed: {opacity: 0.8},
+  avatarText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  sheetBackdrop: {
     flex: 1,
-    marginRight: 12,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'flex-end',
   },
-  logoutButton: {
+  sheet: {
+    backgroundColor: '#ffffff',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingTop: 8,
+    paddingHorizontal: 8,
+  },
+  sheetHandle: {
+    alignSelf: 'center',
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#d0d0d0',
+    marginBottom: 12,
+  },
+  sheetEmail: {
+    fontSize: 12,
+    color: '#666',
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 6,
-    backgroundColor: '#eee',
+    paddingBottom: 8,
   },
-  logoutPressed: {opacity: 0.7},
-  logoutText: {
-    fontSize: 14,
+  sheetItem: {
+    paddingHorizontal: 12,
+    paddingVertical: 14,
+    borderRadius: 8,
+  },
+  sheetItemPressed: {
+    backgroundColor: '#f2f2f2',
+  },
+  sheetItemText: {
+    fontSize: 16,
     color: '#222',
   },
 });
