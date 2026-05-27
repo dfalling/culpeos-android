@@ -17,6 +17,8 @@ import {
   type ElementsQueryVariables,
   useElementsQuery,
 } from '../graphql/__generated__/types';
+import {ElementDetailModal} from './ElementDetailModal';
+import {ElementPreviewCard} from './ElementPreviewCard';
 import {type Viewport, viewportStore} from './viewportStore';
 
 type ElementWithLocation = ElementsQuery['elements'][number];
@@ -42,6 +44,10 @@ export function MapScreen() {
   const [savedViewport, setSavedViewport] = useState<
     Viewport | null | undefined
   >(undefined);
+  const [selectedElementId, setSelectedElementId] = useState<string | null>(
+    null,
+  );
+  const [detailExpanded, setDetailExpanded] = useState(false);
   const safeAreaInsets = useSafeAreaInsets();
 
   useEffect(() => {
@@ -192,6 +198,7 @@ export function MapScreen() {
       <MapLibreMap
         mapStyle={MAP_STYLE}
         style={styles.map}
+        onPress={() => setSelectedElementId(null)}
         onRegionDidChange={onRegionDidChange}>
         <Camera ref={cameraRef} initialViewState={initialViewState} />
         <UserLocation animated accuracy />
@@ -200,15 +207,26 @@ export function MapScreen() {
             <Marker
               key={el.id}
               id={el.id}
-              lngLat={[el.location.longitude, el.location.latitude]}>
-              <View style={styles.pin}>
+              lngLat={[el.location.longitude, el.location.latitude]}
+              onPress={e => {
+                // The marker's "onPress" event bubbles up to the Map's
+                // onPress (both are codegen BubblingEventHandlers), which
+                // would immediately clear the selection we just set.
+                e.stopPropagation();
+                setSelectedElementId(el.id);
+              }}>
+              <View
+                style={[
+                  styles.pin,
+                  selectedElementId === el.id && styles.pinSelected,
+                ]}>
                 {el.icon ? <Text style={styles.pinIcon}>{el.icon}</Text> : null}
               </View>
             </Marker>
           ) : null,
         )}
       </MapLibreMap>
-      {position && !isCenteredOnUser ? (
+      {position && !isCenteredOnUser && !selectedElementId ? (
         <TouchableOpacity
           accessibilityLabel="Recenter map on your location"
           accessibilityRole="button"
@@ -220,6 +238,18 @@ export function MapScreen() {
           <Text style={styles.recenterIcon}>◎</Text>
         </TouchableOpacity>
       ) : null}
+      {selectedElementId ? (
+        <ElementPreviewCard
+          elementId={selectedElementId}
+          bottomOffset={safeAreaInsets.bottom + BOTTOM_BAR_CLEARANCE}
+          onClose={() => setSelectedElementId(null)}
+          onExpand={() => setDetailExpanded(true)}
+        />
+      ) : null}
+      <ElementDetailModal
+        elementId={detailExpanded ? selectedElementId : null}
+        onClose={() => setDetailExpanded(false)}
+      />
     </View>
   );
 }
@@ -240,6 +270,10 @@ const styles = StyleSheet.create({
     borderColor: '#ffffff',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  pinSelected: {
+    backgroundColor: '#0b4ea2',
+    transform: [{scale: 1.15}],
   },
   pinIcon: {
     fontSize: 18,

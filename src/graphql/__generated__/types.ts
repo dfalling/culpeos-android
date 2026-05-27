@@ -543,6 +543,13 @@ export type ElementsQueryVariables = Exact<{
 
 export type ElementsQuery = { __typename?: 'RootQueryType', elements: Array<{ __typename?: 'Element', id: string, name: string, icon: string, location?: { __typename?: 'Location', id: string, latitude: number, longitude: number } | null }> };
 
+export type ElementDetailQueryVariables = Exact<{
+  id: Scalars['String']['input'];
+}>;
+
+
+export type ElementDetailQuery = { __typename?: 'RootQueryType', element: { __typename?: 'Element', id: string, name: string, icon: string, description: string, completed: boolean, labels: Array<string>, location?: { __typename?: 'Location', id: string, address: string, latitude: number, longitude: number } | null, photos: Array<{ __typename?: 'Photo', id: string, thumbnail: string, regular: string, description: string }>, schedule?: { __typename?: 'Schedule', id: string, allDay: boolean, startDate: any, endDate: any, startTime?: any | null, endTime?: any | null } | null } };
+
 export type LoginMutationVariables = Exact<{
   input: LoginInput;
 }>;
@@ -615,6 +622,66 @@ export type ElementsQueryHookResult = ReturnType<typeof useElementsQuery>;
 export type ElementsLazyQueryHookResult = ReturnType<typeof useElementsLazyQuery>;
 export type ElementsSuspenseQueryHookResult = ReturnType<typeof useElementsSuspenseQuery>;
 export type ElementsQueryResult = Apollo.QueryResult<ElementsQuery, ElementsQueryVariables>;
+export const ElementDetailDocument = gql`
+    query ElementDetail($id: String!) {
+  element(id: $id) {
+    id
+    name
+    icon
+    description
+    completed
+    labels
+    location {
+      id
+      address
+      latitude
+      longitude
+    }
+    photos {
+      id
+      thumbnail
+      regular
+      description
+    }
+    schedule {
+      id
+      allDay
+      startDate
+      endDate
+      startTime
+      endTime
+    }
+  }
+}
+    `;
+
+/**
+ * __useElementDetailQuery__
+ *
+ * To run a query within a React component, call `useElementDetailQuery` and pass it any options that fit your needs.
+ * When your component renders, `useElementDetailQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useElementDetailQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useElementDetailQuery(baseOptions: Apollo.QueryHookOptions<ElementDetailQuery, ElementDetailQueryVariables> & ({ variables: ElementDetailQueryVariables; skip?: boolean; } | { skip: boolean; })) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<ElementDetailQuery, ElementDetailQueryVariables>(ElementDetailDocument, options);
+      }
+export function useElementDetailLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<ElementDetailQuery, ElementDetailQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<ElementDetailQuery, ElementDetailQueryVariables>(ElementDetailDocument, options);
+        }
+export type ElementDetailQueryHookResult = ReturnType<typeof useElementDetailQuery>;
+export type ElementDetailLazyQueryHookResult = ReturnType<typeof useElementDetailLazyQuery>;
+export type ElementDetailQueryResult = Apollo.QueryResult<ElementDetailQuery, ElementDetailQueryVariables>;
 export const LoginDocument = gql`
     mutation Login($input: LoginInput!) {
   login(input: $input) {
