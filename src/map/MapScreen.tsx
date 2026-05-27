@@ -29,10 +29,9 @@ const DEFAULT_INITIAL_VIEW = {center: [0, 20] as [number, number], zoom: 1};
 // Show the recenter button once the viewport center drifts more than this
 // fraction of the visible span away from the user in either axis.
 const OFF_CENTER_THRESHOLD = 0.2;
-// Vertical clearance above the device safe area so the recenter button sits
-// above the app's bottom "signed in as…" bar in App.tsx. Keep in sync if that
-// bar's height changes.
-const BOTTOM_BAR_CLEARANCE = 64;
+// Margin above the device safe area for bottom-anchored overlays (recenter
+// button, preview card).
+const BOTTOM_MARGIN = 16;
 
 export function MapScreen() {
   const cameraRef = useRef<CameraRef>(null);
@@ -233,7 +232,7 @@ export function MapScreen() {
           onPress={flyToUser}
           style={[
             styles.recenterButton,
-            {bottom: safeAreaInsets.bottom + BOTTOM_BAR_CLEARANCE},
+            {bottom: safeAreaInsets.bottom + BOTTOM_MARGIN},
           ]}>
           <Text style={styles.recenterIcon}>◎</Text>
         </TouchableOpacity>
@@ -241,7 +240,7 @@ export function MapScreen() {
       {selectedElementId ? (
         <ElementPreviewCard
           elementId={selectedElementId}
-          bottomOffset={safeAreaInsets.bottom + BOTTOM_BAR_CLEARANCE}
+          bottomOffset={safeAreaInsets.bottom + BOTTOM_MARGIN}
           onClose={() => setSelectedElementId(null)}
           onExpand={() => setDetailExpanded(true)}
         />
