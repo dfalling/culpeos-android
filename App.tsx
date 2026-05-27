@@ -96,6 +96,8 @@ function AccountMenu({user}: {user: AuthUser}) {
       <Modal
         animationType="slide"
         transparent
+        statusBarTranslucent
+        navigationBarTranslucent
         visible={open}
         onRequestClose={() => setOpen(false)}>
         <Pressable style={styles.sheetBackdrop} onPress={() => setOpen(false)}>
