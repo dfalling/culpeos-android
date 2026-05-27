@@ -1,0 +1,30 @@
+query ElementDetail($id: String!) {
+  element(id: $id) {
+    id
+    name
+    icon
+    description
+    completed
+    labels
+    location {
+      id
+      address
+      latitude
+      longitude
+    }
+    photos {
+      id
+      thumbnail
+      regular
+      description
+    }
+    schedule {
+      id
+      allDay
+      startDate
+      endDate
+      startTime
+      endTime
+    }
+  }
+}
