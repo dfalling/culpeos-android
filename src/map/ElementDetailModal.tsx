@@ -1,14 +1,10 @@
-import {useEffect, useRef} from 'react';
 import {
   ActivityIndicator,
-  Animated,
-  BackHandler,
   Image,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  useWindowDimensions,
   View,
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -16,6 +12,7 @@ import {
   type ElementDetailQuery,
   useElementDetailQuery,
 } from '../graphql/__generated__/types';
+import {Sheet} from '../ui/Sheet';
 
 type Props = {
   elementId: string | null;
@@ -30,51 +27,14 @@ export function ElementDetailModal({elementId, onClose}: Props) {
     skip: !elementId,
   });
 
-  const visible = elementId !== null;
-  const {height} = useWindowDimensions();
-  const anim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.timing(anim, {
-      toValue: visible ? 1 : 0,
-      duration: 250,
-      useNativeDriver: true,
-    }).start();
-  }, [visible, anim]);
-
-  // The hardware back button closes the sheet (Modal used to handle this).
-  useEffect(() => {
-    if (!visible) {
-      return;
-    }
-    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      onClose();
-      return true;
-    });
-    return () => sub.remove();
-  }, [visible, onClose]);
-
-  const translateY = anim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [height, 0],
-  });
-
-  // Rendered in-tree (not in a separate Modal window) so the white sheet
-  // extends behind the status and navigation bars, matching the map.
   return (
-    <Animated.View
-      style={[
-        StyleSheet.absoluteFill,
-        styles.container,
-        {transform: [{translateY}]},
-      ]}
-      pointerEvents={visible ? 'auto' : 'none'}>
+    <Sheet visible={elementId !== null} onClose={onClose} variant="fullscreen">
       <ModalContents
         element={data?.element ?? null}
         loading={loading}
         onClose={onClose}
       />
-    </Animated.View>
+    </Sheet>
   );
 }
 
