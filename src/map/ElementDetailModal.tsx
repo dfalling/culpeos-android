@@ -1,7 +1,6 @@
 import {
   ActivityIndicator,
   Image,
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,6 +12,7 @@ import {
   type ElementDetailQuery,
   useElementDetailQuery,
 } from '../graphql/__generated__/types';
+import {Sheet} from '../ui/Sheet';
 
 type Props = {
   elementId: string | null;
@@ -28,17 +28,13 @@ export function ElementDetailModal({elementId, onClose}: Props) {
   });
 
   return (
-    <Modal
-      animationType="slide"
-      visible={elementId !== null}
-      onRequestClose={onClose}
-      presentationStyle="fullScreen">
+    <Sheet visible={elementId !== null} onClose={onClose} variant="fullscreen">
       <ModalContents
         element={data?.element ?? null}
         loading={loading}
         onClose={onClose}
       />
-    </Modal>
+    </Sheet>
   );
 }
 

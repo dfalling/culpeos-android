@@ -8,7 +8,6 @@ import {ApolloProvider} from '@apollo/client';
 import {useEffect, useState} from 'react';
 import {
   ActivityIndicator,
-  Modal,
   Pressable,
   StatusBar,
   StyleSheet,
@@ -30,6 +29,7 @@ import {
   useAuthHydrated,
 } from './src/auth/tokenStore';
 import {MapScreen} from './src/map/MapScreen';
+import {Sheet} from './src/ui/Sheet';
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
@@ -93,35 +93,26 @@ function AccountMenu({user}: {user: AuthUser}) {
         ]}>
         <Text style={styles.avatarText}>{initial}</Text>
       </Pressable>
-      <Modal
-        animationType="slide"
-        transparent
+      <Sheet
         visible={open}
-        onRequestClose={() => setOpen(false)}>
-        <Pressable style={styles.sheetBackdrop} onPress={() => setOpen(false)}>
-          <View
-            style={[styles.sheet, {paddingBottom: safeAreaInsets.bottom + 12}]}
-            // Stop taps inside the sheet from dismissing it via the backdrop.
-            onStartShouldSetResponder={() => true}>
-            <View style={styles.sheetHandle} />
-            <Text style={styles.sheetEmail} numberOfLines={1}>
-              {user.email}
-            </Text>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => {
-                setOpen(false);
-                logout();
-              }}
-              style={({pressed}) => [
-                styles.sheetItem,
-                pressed && styles.sheetItemPressed,
-              ]}>
-              <Text style={styles.sheetItemText}>Log out</Text>
-            </Pressable>
-          </View>
+        onClose={() => setOpen(false)}
+        scrimAccessibilityLabel="Close account menu">
+        <Text style={styles.sheetEmail} numberOfLines={1}>
+          {user.email}
+        </Text>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => {
+            setOpen(false);
+            logout();
+          }}
+          style={({pressed}) => [
+            styles.sheetItem,
+            pressed && styles.sheetItemPressed,
+          ]}>
+          <Text style={styles.sheetItemText}>Log out</Text>
         </Pressable>
-      </Modal>
+      </Sheet>
     </>
   );
 }
@@ -154,26 +145,6 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 16,
     fontWeight: '600',
-  },
-  sheetBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    justifyContent: 'flex-end',
-  },
-  sheet: {
-    backgroundColor: '#ffffff',
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    paddingTop: 8,
-    paddingHorizontal: 8,
-  },
-  sheetHandle: {
-    alignSelf: 'center',
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#d0d0d0',
-    marginBottom: 12,
   },
   sheetEmail: {
     fontSize: 12,
