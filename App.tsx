@@ -5,10 +5,11 @@
  */
 
 import {ApolloProvider} from '@apollo/client';
-import {useEffect, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import {
   ActivityIndicator,
-  Modal,
+  Animated,
+  BackHandler,
   Pressable,
   StatusBar,
   StyleSheet,
@@ -74,11 +75,40 @@ function AppContent() {
   );
 }
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 function AccountMenu({user}: {user: AuthUser}) {
   const safeAreaInsets = useSafeAreaInsets();
   const [open, setOpen] = useState(false);
+  const [sheetHeight, setSheetHeight] = useState(0);
+  const anim = useRef(new Animated.Value(0)).current;
 
   const initial = user.email.trim().charAt(0).toUpperCase() || '?';
+
+  useEffect(() => {
+    Animated.timing(anim, {
+      toValue: open ? 1 : 0,
+      duration: 220,
+      useNativeDriver: true,
+    }).start();
+  }, [open, anim]);
+
+  // The hardware back button closes the sheet (Modal used to handle this).
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      setOpen(false);
+      return true;
+    });
+    return () => sub.remove();
+  }, [open]);
+
+  const translateY = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [sheetHeight || 320, 0],
+  });
 
   return (
     <>
@@ -93,18 +123,22 @@ function AccountMenu({user}: {user: AuthUser}) {
         ]}>
         <Text style={styles.avatarText}>{initial}</Text>
       </Pressable>
-      <Modal
-        animationType="slide"
-        transparent
-        statusBarTranslucent
-        navigationBarTranslucent
-        visible={open}
-        onRequestClose={() => setOpen(false)}>
-        <Pressable style={styles.sheetBackdrop} onPress={() => setOpen(false)}>
+      {/* Rendered in-tree (not in a separate Modal window) so the scrim and
+          sheet extend behind the status and navigation bars, matching the map. */}
+      <View
+        style={StyleSheet.absoluteFill}
+        pointerEvents={open ? 'auto' : 'none'}>
+        <AnimatedPressable
+          accessibilityLabel="Close account menu"
+          style={[styles.sheetBackdrop, {opacity: anim}]}
+          onPress={() => setOpen(false)}
+        />
+        <Animated.View
+          style={[styles.sheetWrap, {transform: [{translateY}]}]}
+          pointerEvents="box-none">
           <View
-            style={[styles.sheet, {paddingBottom: safeAreaInsets.bottom + 12}]}
-            // Stop taps inside the sheet from dismissing it via the backdrop.
-            onStartShouldSetResponder={() => true}>
+            onLayout={e => setSheetHeight(e.nativeEvent.layout.height)}
+            style={[styles.sheet, {paddingBottom: safeAreaInsets.bottom + 12}]}>
             <View style={styles.sheetHandle} />
             <Text style={styles.sheetEmail} numberOfLines={1}>
               {user.email}
@@ -122,8 +156,8 @@ function AccountMenu({user}: {user: AuthUser}) {
               <Text style={styles.sheetItemText}>Log out</Text>
             </Pressable>
           </View>
-        </Pressable>
-      </Modal>
+        </Animated.View>
+      </View>
     </>
   );
 }
@@ -158,9 +192,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   sheetBackdrop: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: 'rgba(0,0,0,0.35)',
-    justifyContent: 'flex-end',
+  },
+  sheetWrap: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   sheet: {
     backgroundColor: '#ffffff',
