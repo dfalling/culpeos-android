@@ -1,6 +1,7 @@
 import {useCallback, useRef, useState} from 'react';
 import {
   ActivityIndicator,
+  Keyboard,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -46,8 +47,13 @@ export function SearchOverlay({
   });
 
   // Collapse back to the icon but keep the query text and results, so reopening
-  // shows what was last searched and lets the user edit it.
-  const collapse = useCallback(() => setExpanded(false), []);
+  // shows what was last searched and lets the user edit it. Dismiss the keyboard
+  // explicitly: when collapsing from a result tap (rather than the keyboard's
+  // search key) nothing else would hide it.
+  const collapse = useCallback(() => {
+    Keyboard.dismiss();
+    setExpanded(false);
+  }, []);
 
   // The field's × empties the query for a fresh search (vs. collapse, which
   // dismisses but preserves it).
