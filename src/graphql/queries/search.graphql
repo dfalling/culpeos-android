@@ -1,0 +1,27 @@
+query Search($query: String!) {
+  elements(search: $query) {
+    id
+    name
+    icon
+    location {
+      id
+      address
+      latitude
+      longitude
+    }
+  }
+  trips(search: $query) {
+    id
+    name
+    icon
+    description
+  }
+  placeSearch(query: $query, granularity: REGIONS) {
+    placeId
+    name
+    address
+    latitude
+    longitude
+    types
+  }
+}
