@@ -118,6 +118,14 @@ export type GooglePlace = {
   website?: Maybe<Scalars['String']['output']>;
 };
 
+/** How a list of labels is matched against an element's labels */
+export enum LabelMatchMode {
+  /** Element has every one of the given labels */
+  All = 'ALL',
+  /** Element has at least one of the given labels */
+  Any = 'ANY'
+}
+
 export type Location = {
   __typename?: 'Location';
   address: Scalars['String']['output'];
@@ -221,6 +229,18 @@ export type PhotoUser = {
   name: Scalars['String']['output'];
   portfolioUrl?: Maybe<Scalars['String']['output']>;
 };
+
+/** Restricts place search results to a category of place */
+export enum PlaceGranularity {
+  /** Precise street addresses only */
+  Address = 'ADDRESS',
+  /** Cities only (locality / administrative_area_level_3) */
+  Cities = 'CITIES',
+  /** Businesses and points of interest only */
+  Establishment = 'ESTABLISHMENT',
+  /** Countries, states, regions, and cities */
+  Regions = 'REGIONS'
+}
 
 export type RegisterInput = {
   email: Scalars['String']['input'];
@@ -424,8 +444,12 @@ export type RootQueryTypeElementsArgs = {
   afterDate?: InputMaybe<Scalars['DateTime']['input']>;
   bounds?: InputMaybe<GeoBounds>;
   completed?: InputMaybe<Scalars['Boolean']['input']>;
+  deleted?: InputMaybe<Scalars['Boolean']['input']>;
   excludeTripId?: InputMaybe<Scalars['String']['input']>;
   hasSchedule?: InputMaybe<Scalars['Boolean']['input']>;
+  labels?: InputMaybe<Array<Scalars['String']['input']>>;
+  labelsMatch?: InputMaybe<LabelMatchMode>;
+  search?: InputMaybe<Scalars['String']['input']>;
   sortLocation?: InputMaybe<GeoPoint>;
   tripId?: InputMaybe<Scalars['String']['input']>;
 };
@@ -442,12 +466,19 @@ export type RootQueryTypePhotoSearchArgs = {
 
 
 export type RootQueryTypePlaceSearchArgs = {
+  granularity?: InputMaybe<PlaceGranularity>;
   query: Scalars['String']['input'];
 };
 
 
 export type RootQueryTypeTripArgs = {
   id: Scalars['String']['input'];
+};
+
+
+export type RootQueryTypeTripsArgs = {
+  deleted?: InputMaybe<Scalars['Boolean']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type S3PhotoInput = {
@@ -536,19 +567,20 @@ export type User = {
   locale?: Maybe<Scalars['String']['output']>;
 };
 
-export type ElementsQueryVariables = Exact<{
-  bounds?: InputMaybe<GeoBounds>;
-}>;
-
-
-export type ElementsQuery = { __typename?: 'RootQueryType', elements: Array<{ __typename?: 'Element', id: string, name: string, icon: string, location?: { __typename?: 'Location', id: string, latitude: number, longitude: number } | null }> };
-
 export type ElementDetailQueryVariables = Exact<{
   id: Scalars['String']['input'];
 }>;
 
 
 export type ElementDetailQuery = { __typename?: 'RootQueryType', element: { __typename?: 'Element', id: string, name: string, icon: string, description: string, completed: boolean, labels: Array<string>, location?: { __typename?: 'Location', id: string, address: string, latitude: number, longitude: number } | null, photos: Array<{ __typename?: 'Photo', id: string, thumbnail: string, regular: string, description: string }>, schedule?: { __typename?: 'Schedule', id: string, allDay: boolean, startDate: any, endDate: any, startTime?: any | null, endTime?: any | null } | null } };
+
+export type ElementsQueryVariables = Exact<{
+  bounds?: InputMaybe<GeoBounds>;
+  tripId?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type ElementsQuery = { __typename?: 'RootQueryType', elements: Array<{ __typename?: 'Element', id: string, name: string, icon: string, location?: { __typename?: 'Location', id: string, latitude: number, longitude: number } | null }> };
 
 export type LoginMutationVariables = Exact<{
   input: LoginInput;
@@ -571,57 +603,14 @@ export type RenewTokenMutationVariables = Exact<{
 
 export type RenewTokenMutation = { __typename?: 'RootMutationType', renewToken: { __typename?: 'LoginToken', accessToken: string, refreshToken: string, expiresAt: any, user: { __typename?: 'User', id: string, email: string, locale?: string | null } } };
 
+export type SearchQueryVariables = Exact<{
+  query: Scalars['String']['input'];
+}>;
 
-export const ElementsDocument = gql`
-    query Elements($bounds: GeoBounds) {
-  elements(bounds: $bounds) {
-    id
-    name
-    icon
-    location {
-      id
-      latitude
-      longitude
-    }
-  }
-}
-    `;
 
-/**
- * __useElementsQuery__
- *
- * To run a query within a React component, call `useElementsQuery` and pass it any options that fit your needs.
- * When your component renders, `useElementsQuery` returns an object from Apollo Client that contains loading, error, and data properties
- * you can use to render your UI.
- *
- * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
- *
- * @example
- * const { data, loading, error } = useElementsQuery({
- *   variables: {
- *      bounds: // value for 'bounds'
- *   },
- * });
- */
-export function useElementsQuery(baseOptions?: Apollo.QueryHookOptions<ElementsQuery, ElementsQueryVariables>) {
-        const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useQuery<ElementsQuery, ElementsQueryVariables>(ElementsDocument, options);
-      }
-export function useElementsLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<ElementsQuery, ElementsQueryVariables>) {
-          const options = {...defaultOptions, ...baseOptions}
-          return Apollo.useLazyQuery<ElementsQuery, ElementsQueryVariables>(ElementsDocument, options);
-        }
-// @ts-ignore
-export function useElementsSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<ElementsQuery, ElementsQueryVariables>): Apollo.UseSuspenseQueryResult<ElementsQuery, ElementsQueryVariables>;
-export function useElementsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ElementsQuery, ElementsQueryVariables>): Apollo.UseSuspenseQueryResult<ElementsQuery | undefined, ElementsQueryVariables>;
-export function useElementsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ElementsQuery, ElementsQueryVariables>) {
-          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
-          return Apollo.useSuspenseQuery<ElementsQuery, ElementsQueryVariables>(ElementsDocument, options);
-        }
-export type ElementsQueryHookResult = ReturnType<typeof useElementsQuery>;
-export type ElementsLazyQueryHookResult = ReturnType<typeof useElementsLazyQuery>;
-export type ElementsSuspenseQueryHookResult = ReturnType<typeof useElementsSuspenseQuery>;
-export type ElementsQueryResult = Apollo.QueryResult<ElementsQuery, ElementsQueryVariables>;
+export type SearchQuery = { __typename?: 'RootQueryType', elements: Array<{ __typename?: 'Element', id: string, name: string, icon: string, location?: { __typename?: 'Location', id: string, address: string, latitude: number, longitude: number } | null }>, trips: Array<{ __typename?: 'Trip', id: string, name: string, icon: string, description: string }>, placeSearch: Array<{ __typename?: 'GooglePlace', placeId: string, name: string, address: string, latitude: number, longitude: number, types?: Array<string> | null }> };
+
+
 export const ElementDetailDocument = gql`
     query ElementDetail($id: String!) {
   element(id: $id) {
@@ -671,7 +660,7 @@ export const ElementDetailDocument = gql`
  *   },
  * });
  */
-export function useElementDetailQuery(baseOptions: Apollo.QueryHookOptions<ElementDetailQuery, ElementDetailQueryVariables> & ({ variables: ElementDetailQueryVariables; skip?: boolean; } | { skip: boolean; })) {
+export function useElementDetailQuery(baseOptions: Apollo.QueryHookOptions<ElementDetailQuery, ElementDetailQueryVariables> & ({ variables: ElementDetailQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
         const options = {...defaultOptions, ...baseOptions}
         return Apollo.useQuery<ElementDetailQuery, ElementDetailQueryVariables>(ElementDetailDocument, options);
       }
@@ -679,9 +668,68 @@ export function useElementDetailLazyQuery(baseOptions?: Apollo.LazyQueryHookOpti
           const options = {...defaultOptions, ...baseOptions}
           return Apollo.useLazyQuery<ElementDetailQuery, ElementDetailQueryVariables>(ElementDetailDocument, options);
         }
+// @ts-ignore
+export function useElementDetailSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<ElementDetailQuery, ElementDetailQueryVariables>): Apollo.UseSuspenseQueryResult<ElementDetailQuery, ElementDetailQueryVariables>;
+export function useElementDetailSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ElementDetailQuery, ElementDetailQueryVariables>): Apollo.UseSuspenseQueryResult<ElementDetailQuery | undefined, ElementDetailQueryVariables>;
+export function useElementDetailSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ElementDetailQuery, ElementDetailQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<ElementDetailQuery, ElementDetailQueryVariables>(ElementDetailDocument, options);
+        }
 export type ElementDetailQueryHookResult = ReturnType<typeof useElementDetailQuery>;
 export type ElementDetailLazyQueryHookResult = ReturnType<typeof useElementDetailLazyQuery>;
+export type ElementDetailSuspenseQueryHookResult = ReturnType<typeof useElementDetailSuspenseQuery>;
 export type ElementDetailQueryResult = Apollo.QueryResult<ElementDetailQuery, ElementDetailQueryVariables>;
+export const ElementsDocument = gql`
+    query Elements($bounds: GeoBounds, $tripId: String) {
+  elements(bounds: $bounds, tripId: $tripId) {
+    id
+    name
+    icon
+    location {
+      id
+      latitude
+      longitude
+    }
+  }
+}
+    `;
+
+/**
+ * __useElementsQuery__
+ *
+ * To run a query within a React component, call `useElementsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useElementsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useElementsQuery({
+ *   variables: {
+ *      bounds: // value for 'bounds'
+ *      tripId: // value for 'tripId'
+ *   },
+ * });
+ */
+export function useElementsQuery(baseOptions?: Apollo.QueryHookOptions<ElementsQuery, ElementsQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<ElementsQuery, ElementsQueryVariables>(ElementsDocument, options);
+      }
+export function useElementsLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<ElementsQuery, ElementsQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<ElementsQuery, ElementsQueryVariables>(ElementsDocument, options);
+        }
+// @ts-ignore
+export function useElementsSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<ElementsQuery, ElementsQueryVariables>): Apollo.UseSuspenseQueryResult<ElementsQuery, ElementsQueryVariables>;
+export function useElementsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ElementsQuery, ElementsQueryVariables>): Apollo.UseSuspenseQueryResult<ElementsQuery | undefined, ElementsQueryVariables>;
+export function useElementsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ElementsQuery, ElementsQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<ElementsQuery, ElementsQueryVariables>(ElementsDocument, options);
+        }
+export type ElementsQueryHookResult = ReturnType<typeof useElementsQuery>;
+export type ElementsLazyQueryHookResult = ReturnType<typeof useElementsLazyQuery>;
+export type ElementsSuspenseQueryHookResult = ReturnType<typeof useElementsSuspenseQuery>;
+export type ElementsQueryResult = Apollo.QueryResult<ElementsQuery, ElementsQueryVariables>;
 export const LoginDocument = gql`
     mutation Login($input: LoginInput!) {
   login(input: $input) {
@@ -795,3 +843,68 @@ export function useRenewTokenMutation(baseOptions?: Apollo.MutationHookOptions<R
 export type RenewTokenMutationHookResult = ReturnType<typeof useRenewTokenMutation>;
 export type RenewTokenMutationResult = Apollo.MutationResult<RenewTokenMutation>;
 export type RenewTokenMutationOptions = Apollo.BaseMutationOptions<RenewTokenMutation, RenewTokenMutationVariables>;
+export const SearchDocument = gql`
+    query Search($query: String!) {
+  elements(search: $query) {
+    id
+    name
+    icon
+    location {
+      id
+      address
+      latitude
+      longitude
+    }
+  }
+  trips(search: $query) {
+    id
+    name
+    icon
+    description
+  }
+  placeSearch(query: $query, granularity: REGIONS) {
+    placeId
+    name
+    address
+    latitude
+    longitude
+    types
+  }
+}
+    `;
+
+/**
+ * __useSearchQuery__
+ *
+ * To run a query within a React component, call `useSearchQuery` and pass it any options that fit your needs.
+ * When your component renders, `useSearchQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useSearchQuery({
+ *   variables: {
+ *      query: // value for 'query'
+ *   },
+ * });
+ */
+export function useSearchQuery(baseOptions: Apollo.QueryHookOptions<SearchQuery, SearchQueryVariables> & ({ variables: SearchQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<SearchQuery, SearchQueryVariables>(SearchDocument, options);
+      }
+export function useSearchLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<SearchQuery, SearchQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<SearchQuery, SearchQueryVariables>(SearchDocument, options);
+        }
+// @ts-ignore
+export function useSearchSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<SearchQuery, SearchQueryVariables>): Apollo.UseSuspenseQueryResult<SearchQuery, SearchQueryVariables>;
+export function useSearchSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<SearchQuery, SearchQueryVariables>): Apollo.UseSuspenseQueryResult<SearchQuery | undefined, SearchQueryVariables>;
+export function useSearchSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<SearchQuery, SearchQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<SearchQuery, SearchQueryVariables>(SearchDocument, options);
+        }
+export type SearchQueryHookResult = ReturnType<typeof useSearchQuery>;
+export type SearchLazyQueryHookResult = ReturnType<typeof useSearchLazyQuery>;
+export type SearchSuspenseQueryHookResult = ReturnType<typeof useSearchSuspenseQuery>;
+export type SearchQueryResult = Apollo.QueryResult<SearchQuery, SearchQueryVariables>;

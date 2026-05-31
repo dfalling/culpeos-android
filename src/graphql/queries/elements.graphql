@@ -1,5 +1,5 @@
-query Elements($bounds: GeoBounds) {
-  elements(bounds: $bounds) {
+query Elements($bounds: GeoBounds, $tripId: String) {
+  elements(bounds: $bounds, tripId: $tripId) {
     id
     name
     icon

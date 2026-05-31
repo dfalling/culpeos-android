@@ -19,12 +19,27 @@ import {
 } from '../graphql/__generated__/types';
 import {ElementDetailModal} from './ElementDetailModal';
 import {ElementPreviewCard} from './ElementPreviewCard';
+import {zoomForPlaceTypes} from './placeZoom';
+import {
+  type SearchElement,
+  SearchOverlay,
+  type SearchPlace,
+  type SearchTrip,
+} from './SearchOverlay';
+import {TripFilterChip} from './TripFilterChip';
 import {type Viewport, viewportStore} from './viewportStore';
 
 type ElementWithLocation = ElementsQuery['elements'][number];
 
 const MAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
 const USER_ZOOM = 14;
+// Zoom used when flying to a searched element, and for single-element trips
+// where there is no extent to fit.
+const ELEMENT_ZOOM = 15;
+const TRIP_SINGLE_ZOOM = 13;
+// Inset (points) kept around a trip's elements when fitting the camera so pins
+// aren't flush against the screen edges or hidden under the overlays.
+const FIT_PADDING = {top: 120, right: 60, bottom: 120, left: 60};
 const DEFAULT_INITIAL_VIEW = {center: [0, 20] as [number, number], zoom: 1};
 // Show the recenter button once the viewport center drifts more than this
 // fraction of the visible span away from the user in either axis.
@@ -43,10 +58,21 @@ export function MapScreen() {
   const [savedViewport, setSavedViewport] = useState<
     Viewport | null | undefined
   >(undefined);
+  // The element selected on the map (shows the bottom preview card). Separate
+  // from the element whose full-detail modal is open, so a located element can
+  // fall back to its preview card after the modal closes while a location-less
+  // one (which has no map presence) returns straight to the plain map.
   const [selectedElementId, setSelectedElementId] = useState<string | null>(
     null,
   );
-  const [detailExpanded, setDetailExpanded] = useState(false);
+  const [detailElementId, setDetailElementId] = useState<string | null>(null);
+  // When set, the map is filtered to a single trip: only that trip's elements
+  // are shown and the bounds-based query is paused.
+  const [tripFilter, setTripFilter] = useState<{
+    id: string;
+    name: string;
+    icon: string;
+  } | null>(null);
   const safeAreaInsets = useSafeAreaInsets();
 
   useEffect(() => {
@@ -148,25 +174,30 @@ export function MapScreen() {
     return offLng <= OFF_CENTER_THRESHOLD && offLat <= OFF_CENTER_THRESHOLD;
   }, [position, viewportState]);
 
-  const {data} = useElementsQuery({
-    skip: !bounds,
-    variables: bounds ? {bounds} : undefined,
-  });
+  // One query, two modes: when a trip filter is active fetch that trip's
+  // elements; otherwise fetch by viewport bounds. Reusing the single hook keeps
+  // the element shape (and Apollo cache) identical across modes.
+  const {data, loading: elementsLoading} = useElementsQuery(
+    tripFilter
+      ? {variables: {tripId: tripFilter.id}}
+      : {skip: !bounds, variables: bounds ? {bounds} : undefined},
+  );
 
   // Accumulate elements across viewport fetches so pins persist while a new
   // search is in flight. Fine for our small per-user dataset; revisit if we
-  // ever need eviction or to reflect server-side deletes.
+  // ever need eviction or to reflect server-side deletes. Skip while filtering
+  // by trip so trip-only results don't leak into the normal viewport view.
   const [elementsById, setElementsById] = useState<
     ReadonlyMap<string, ElementWithLocation>
   >(new Map());
   useEffect(() => {
-    if (!data?.elements) return;
+    if (tripFilter || !data?.elements) return;
     setElementsById(prev => {
       const next = new Map(prev);
       for (const el of data.elements) next.set(el.id, el);
       return next;
     });
-  }, [data?.elements]);
+  }, [data?.elements, tripFilter]);
 
   // Only render markers whose location falls inside the last-known viewport.
   // <Marker> is a native View — rendering offscreen ones still costs layout
@@ -180,6 +211,98 @@ export function MapScreen() {
       return lng >= left && lng <= right && lat >= bottom && lat <= top;
     });
   }, [elementsById, bounds]);
+
+  // Elements with a location for the active trip; drives both the markers and
+  // the camera fit while filtering.
+  const tripElements = useMemo(
+    () =>
+      tripFilter
+        ? (data?.elements ?? []).filter(el => el.location != null)
+        : [],
+    [tripFilter, data?.elements],
+  );
+
+  // In trip mode render the whole trip (no viewport cull) so panning around it
+  // doesn't drop pins; otherwise use the bounds-culled accumulated set.
+  const displayedElements = tripFilter ? tripElements : visibleElements;
+
+  // Fit the camera to the trip's extent once its elements arrive. Guarded by a
+  // ref so panning/zooming afterwards doesn't snap back, and reset when the
+  // filter clears so re-selecting the same trip fits again.
+  const fittedTripRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!tripFilter) {
+      fittedTripRef.current = null;
+      return;
+    }
+    if (fittedTripRef.current === tripFilter.id || elementsLoading) return;
+    if (tripElements.length === 0) return;
+    fittedTripRef.current = tripFilter.id;
+
+    let west = Infinity;
+    let south = Infinity;
+    let east = -Infinity;
+    let north = -Infinity;
+    for (const el of tripElements) {
+      if (!el.location) continue;
+      const {longitude: lng, latitude: lat} = el.location;
+      if (lng < west) west = lng;
+      if (lng > east) east = lng;
+      if (lat < south) south = lat;
+      if (lat > north) north = lat;
+    }
+    if (west === east && south === north) {
+      cameraRef.current?.flyTo({
+        center: [west, south],
+        zoom: TRIP_SINGLE_ZOOM,
+        duration: 1200,
+      });
+    } else {
+      cameraRef.current?.fitBounds([west, south, east, north], {
+        padding: FIT_PADDING,
+        duration: 1200,
+      });
+    }
+  }, [tripFilter, tripElements, elementsLoading]);
+
+  const handleSelectElement = useCallback((element: SearchElement) => {
+    setTripFilter(null);
+    if (element.location) {
+      const {longitude, latitude} = element.location;
+      // Seed the marker set so the pin is present immediately, before the
+      // bounds query around the new center returns.
+      setElementsById(prev => {
+        const next = new Map(prev);
+        next.set(element.id, element);
+        return next;
+      });
+      setSelectedElementId(element.id);
+      cameraRef.current?.flyTo({
+        center: [longitude, latitude],
+        zoom: ELEMENT_ZOOM,
+        duration: 1200,
+      });
+    } else {
+      // No coordinates to fly to — a preview card pinned over an unrelated map
+      // view would be misleading, so go straight to the full details.
+      setSelectedElementId(null);
+      setDetailElementId(element.id);
+    }
+  }, []);
+
+  const handleSelectTrip = useCallback((trip: SearchTrip) => {
+    setSelectedElementId(null);
+    setTripFilter({id: trip.id, name: trip.name, icon: trip.icon});
+  }, []);
+
+  const handleSelectPlace = useCallback((place: SearchPlace) => {
+    setTripFilter(null);
+    cameraRef.current?.flyTo({
+      center: [place.longitude, place.latitude],
+      zoom: zoomForPlaceTypes(place.types),
+      duration: 1200,
+    });
+  }, []);
 
   // Brief blank frame while the saved viewport hydrates from storage; the
   // camera's initialViewState is set once, so we wait for the resolved value
@@ -201,7 +324,7 @@ export function MapScreen() {
         onRegionDidChange={onRegionDidChange}>
         <Camera ref={cameraRef} initialViewState={initialViewState} />
         <UserLocation animated accuracy />
-        {visibleElements.map(el =>
+        {displayedElements.map(el =>
           el.location ? (
             <Marker
               key={el.id}
@@ -242,12 +365,26 @@ export function MapScreen() {
           elementId={selectedElementId}
           bottomOffset={safeAreaInsets.bottom + BOTTOM_MARGIN}
           onClose={() => setSelectedElementId(null)}
-          onExpand={() => setDetailExpanded(true)}
+          onExpand={() => setDetailElementId(selectedElementId)}
         />
       ) : null}
+      {tripFilter ? (
+        <TripFilterChip
+          icon={tripFilter.icon}
+          name={tripFilter.name}
+          topOffset={safeAreaInsets.top + 12 + 52}
+          onClear={() => setTripFilter(null)}
+        />
+      ) : null}
+      <SearchOverlay
+        topOffset={safeAreaInsets.top + 12}
+        onSelectElement={handleSelectElement}
+        onSelectTrip={handleSelectTrip}
+        onSelectPlace={handleSelectPlace}
+      />
       <ElementDetailModal
-        elementId={detailExpanded ? selectedElementId : null}
-        onClose={() => setDetailExpanded(false)}
+        elementId={detailElementId}
+        onClose={() => setDetailElementId(null)}
       />
     </View>
   );
