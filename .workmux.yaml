@@ -1,0 +1,12 @@
+# workmux project configuration
+# For global settings, edit ~/.config/workmux/config.yaml
+
+#-------------------------------------------------------------------------------
+# Hooks
+#-------------------------------------------------------------------------------
+
+# Run in each new worktree before the tmux window opens. Trusting the
+# project's mise.toml lets the pinned node/bun/java toolchain activate
+# without an interactive prompt.
+post_create:
+  - mise trust
