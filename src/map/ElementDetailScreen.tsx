@@ -1,3 +1,4 @@
+import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {
   ActivityIndicator,
   Image,
@@ -12,29 +13,24 @@ import {
   type ElementDetailQuery,
   useElementDetailQuery,
 } from '../graphql/__generated__/types';
-import {Sheet} from '../ui/Sheet';
+import type {RootStackParamList} from '../navigation/types';
 
-type Props = {
-  elementId: string | null;
-  onClose: () => void;
-};
+type Props = NativeStackScreenProps<RootStackParamList, 'ElementDetail'>;
 
 type ElementDetail = ElementDetailQuery['element'];
 
-export function ElementDetailModal({elementId, onClose}: Props) {
-  const {data, loading} = useElementDetailQuery({
-    variables: {id: elementId ?? ''},
-    skip: !elementId,
-  });
+export function ElementDetailScreen({route, navigation}: Props) {
+  const {elementId} = route.params;
+  const {data, loading} = useElementDetailQuery({variables: {id: elementId}});
 
   return (
-    <Sheet visible={elementId !== null} onClose={onClose} variant="fullscreen">
+    <View style={styles.screen}>
       <ModalContents
         element={data?.element ?? null}
         loading={loading}
-        onClose={onClose}
+        onClose={() => navigation.goBack()}
       />
-    </Sheet>
+    </View>
   );
 }
 
@@ -167,6 +163,10 @@ function formatSchedule(schedule: NonNullable<ElementDetail['schedule']>) {
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+  },
   container: {
     flex: 1,
     backgroundColor: '#ffffff',
