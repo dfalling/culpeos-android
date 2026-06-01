@@ -13,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import EmojiPicker from 'rn-emoji-keyboard';
 import {
   type ElementDetailQuery,
   type ElementInput,
@@ -24,6 +25,14 @@ import type {RootStackParamList} from '../navigation/types';
 type Props = NativeStackScreenProps<RootStackParamList, 'ElementEdit'>;
 
 type Element = ElementDetailQuery['element'];
+
+// Requires an http(s) scheme and at least a host. We avoid the URL constructor
+// since React Native's implementation is incomplete and inconsistent.
+const URL_PATTERN = /^https?:\/\/[^\s/$.?#][^\s]*$/i;
+
+function isValidUrl(value: string): boolean {
+  return URL_PATTERN.test(value);
+}
 
 export function ElementEditScreen({route, navigation}: Props) {
   const {elementId} = route.params;
@@ -52,23 +61,31 @@ export function ElementEditScreen({route, navigation}: Props) {
 function EditForm({element, onDone}: {element: Element; onDone: () => void}) {
   const safeAreaInsets = useSafeAreaInsets();
   const [name, setName] = useState(element.name);
+  const [uri, setUri] = useState(element.uri);
+  const [icon, setIcon] = useState(element.icon);
   const [description, setDescription] = useState(element.description);
   const [completed, setCompleted] = useState(element.completed);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [updateElement, {loading: saving}] = useUpdateElementMutation();
 
-  const canSave = name.trim().length > 0 && !saving;
+  const trimmedUri = uri.trim();
+  const uriValid = isValidUrl(trimmedUri);
+  const uriError =
+    trimmedUri.length > 0 && !uriValid ? 'Enter a valid URL.' : null;
+
+  const canSave = name.trim().length > 0 && uriValid && !saving;
 
   async function onSave() {
     setErrorMessage(null);
     const input: ElementInput = {
       id: element.id,
       name: name.trim(),
+      uri: trimmedUri,
+      icon,
       description,
       completed,
       // Preserved as-is — not editable here, but required by the mutation.
-      uri: element.uri,
-      icon: element.icon,
       labels: element.labels,
       tripIds: element.trips.map(trip => trip.id),
       location: element.location
@@ -155,6 +172,35 @@ function EditForm({element, onDone}: {element: Element; onDone: () => void}) {
           />
         </Field>
 
+        <Field label="Icon">
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Choose icon"
+            disabled={saving}
+            onPress={() => setPickerOpen(true)}
+            style={styles.iconButton}>
+            {icon ? (
+              <Text style={styles.iconButtonValue}>{icon}</Text>
+            ) : (
+              <Text style={styles.iconButtonPlaceholder}>＋</Text>
+            )}
+          </Pressable>
+        </Field>
+
+        <Field label="URL">
+          <TextInput
+            style={styles.input}
+            value={uri}
+            onChangeText={setUri}
+            placeholder="https://example.com"
+            autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="url"
+            editable={!saving}
+          />
+          {uriError ? <Text style={styles.error}>{uriError}</Text> : null}
+        </Field>
+
         <View style={styles.switchRow}>
           <Text style={styles.fieldLabel}>Completed</Text>
           <Switch
@@ -178,6 +224,12 @@ function EditForm({element, onDone}: {element: Element; onDone: () => void}) {
 
         {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
       </ScrollView>
+
+      <EmojiPicker
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        onEmojiSelected={emoji => setIcon(emoji.emoji)}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -255,6 +307,22 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 16,
     color: '#111',
+  },
+  iconButton: {
+    width: 64,
+    height: 64,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconButtonValue: {
+    fontSize: 32,
+  },
+  iconButtonPlaceholder: {
+    fontSize: 28,
+    color: '#aaa',
   },
   multiline: {
     minHeight: 120,
