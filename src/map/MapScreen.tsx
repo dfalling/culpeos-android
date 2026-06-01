@@ -8,16 +8,18 @@ import {
   useCurrentPosition,
   type ViewStateChangeEvent,
 } from '@maplibre/maplibre-react-native';
+import {useNavigation} from '@react-navigation/native';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import type {NativeSyntheticEvent} from 'react-native';
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {AccountMenu} from '../account/AccountMenu';
 import {
   type ElementsQuery,
   type ElementsQueryVariables,
   useElementsQuery,
 } from '../graphql/__generated__/types';
-import {ElementDetailModal} from './ElementDetailModal';
+import type {RootStackNavigation} from '../navigation/types';
 import {ElementPreviewCard} from './ElementPreviewCard';
 import {zoomForPlaceTypes} from './placeZoom';
 import {
@@ -49,6 +51,7 @@ const OFF_CENTER_THRESHOLD = 0.2;
 const BOTTOM_MARGIN = 16;
 
 export function MapScreen() {
+  const navigation = useNavigation<RootStackNavigation>();
   const cameraRef = useRef<CameraRef>(null);
   // Gate the bounds fetch + viewport-save until we know the map is sitting on
   // a real location — either a restored viewport or a fly-to-user. Prevents
@@ -58,14 +61,14 @@ export function MapScreen() {
   const [savedViewport, setSavedViewport] = useState<
     Viewport | null | undefined
   >(undefined);
-  // The element selected on the map (shows the bottom preview card). Separate
-  // from the element whose full-detail modal is open, so a located element can
-  // fall back to its preview card after the modal closes while a location-less
-  // one (which has no map presence) returns straight to the plain map.
+  // The element selected on the map (shows the bottom preview card). Kept in
+  // map state while the full-detail screen is pushed on top, so a located
+  // element falls back to its preview card when the detail screen pops; a
+  // location-less one (no map presence) is never selected, so popping returns
+  // straight to the plain map.
   const [selectedElementId, setSelectedElementId] = useState<string | null>(
     null,
   );
-  const [detailElementId, setDetailElementId] = useState<string | null>(null);
   // When set, the map is filtered to a single trip: only that trip's elements
   // are shown and the bounds-based query is paused.
   const [tripFilter, setTripFilter] = useState<{
@@ -265,30 +268,33 @@ export function MapScreen() {
     }
   }, [tripFilter, tripElements, elementsLoading]);
 
-  const handleSelectElement = useCallback((element: SearchElement) => {
-    setTripFilter(null);
-    if (element.location) {
-      const {longitude, latitude} = element.location;
-      // Seed the marker set so the pin is present immediately, before the
-      // bounds query around the new center returns.
-      setElementsById(prev => {
-        const next = new Map(prev);
-        next.set(element.id, element);
-        return next;
-      });
-      setSelectedElementId(element.id);
-      cameraRef.current?.flyTo({
-        center: [longitude, latitude],
-        zoom: ELEMENT_ZOOM,
-        duration: 1200,
-      });
-    } else {
-      // No coordinates to fly to — a preview card pinned over an unrelated map
-      // view would be misleading, so go straight to the full details.
-      setSelectedElementId(null);
-      setDetailElementId(element.id);
-    }
-  }, []);
+  const handleSelectElement = useCallback(
+    (element: SearchElement) => {
+      setTripFilter(null);
+      if (element.location) {
+        const {longitude, latitude} = element.location;
+        // Seed the marker set so the pin is present immediately, before the
+        // bounds query around the new center returns.
+        setElementsById(prev => {
+          const next = new Map(prev);
+          next.set(element.id, element);
+          return next;
+        });
+        setSelectedElementId(element.id);
+        cameraRef.current?.flyTo({
+          center: [longitude, latitude],
+          zoom: ELEMENT_ZOOM,
+          duration: 1200,
+        });
+      } else {
+        // No coordinates to fly to — a preview card pinned over an unrelated
+        // map view would be misleading, so go straight to the full details.
+        setSelectedElementId(null);
+        navigation.navigate('ElementDetail', {elementId: element.id});
+      }
+    },
+    [navigation],
+  );
 
   const handleSelectTrip = useCallback((trip: SearchTrip) => {
     setSelectedElementId(null);
@@ -365,7 +371,9 @@ export function MapScreen() {
           elementId={selectedElementId}
           bottomOffset={safeAreaInsets.bottom + BOTTOM_MARGIN}
           onClose={() => setSelectedElementId(null)}
-          onExpand={() => setDetailElementId(selectedElementId)}
+          onExpand={() =>
+            navigation.navigate('ElementDetail', {elementId: selectedElementId})
+          }
         />
       ) : null}
       {tripFilter ? (
@@ -382,10 +390,7 @@ export function MapScreen() {
         onSelectTrip={handleSelectTrip}
         onSelectPlace={handleSelectPlace}
       />
-      <ElementDetailModal
-        elementId={detailElementId}
-        onClose={() => setDetailElementId(null)}
-      />
+      <AccountMenu />
     </View>
   );
 }

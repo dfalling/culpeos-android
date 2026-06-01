@@ -5,31 +5,21 @@
  */
 
 import {ApolloProvider} from '@apollo/client';
-import {useEffect, useState} from 'react';
+import {NavigationContainer} from '@react-navigation/native';
+import {useEffect} from 'react';
 import {
   ActivityIndicator,
-  Pressable,
   StatusBar,
   StyleSheet,
-  Text,
   useColorScheme,
   View,
 } from 'react-native';
-import {
-  SafeAreaProvider,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
-import {apolloClient, logout} from './src/auth/authClient';
+import {SafeAreaProvider} from 'react-native-safe-area-context';
+import {apolloClient} from './src/auth/authClient';
 import {useDeepLinkListener} from './src/auth/deepLinks';
 import {LoginScreen} from './src/auth/LoginScreen';
-import {
-  type AuthUser,
-  tokenStore,
-  useAuth,
-  useAuthHydrated,
-} from './src/auth/tokenStore';
-import {MapScreen} from './src/map/MapScreen';
-import {Sheet} from './src/ui/Sheet';
+import {tokenStore, useAuth, useAuthHydrated} from './src/auth/tokenStore';
+import {RootNavigator} from './src/navigation/RootNavigator';
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
@@ -67,53 +57,9 @@ function AppContent() {
   }
 
   return (
-    <View style={styles.container}>
-      <MapScreen />
-      <AccountMenu user={auth.user} />
-    </View>
-  );
-}
-
-function AccountMenu({user}: {user: AuthUser}) {
-  const safeAreaInsets = useSafeAreaInsets();
-  const [open, setOpen] = useState(false);
-
-  const initial = user.email.trim().charAt(0).toUpperCase() || '?';
-
-  return (
-    <>
-      <Pressable
-        accessibilityLabel="Account menu"
-        accessibilityRole="button"
-        onPress={() => setOpen(true)}
-        style={({pressed}) => [
-          styles.avatarButton,
-          {top: safeAreaInsets.top + 12},
-          pressed && styles.avatarPressed,
-        ]}>
-        <Text style={styles.avatarText}>{initial}</Text>
-      </Pressable>
-      <Sheet
-        visible={open}
-        onClose={() => setOpen(false)}
-        scrimAccessibilityLabel="Close account menu">
-        <Text style={styles.sheetEmail} numberOfLines={1}>
-          {user.email}
-        </Text>
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => {
-            setOpen(false);
-            logout();
-          }}
-          style={({pressed}) => [
-            styles.sheetItem,
-            pressed && styles.sheetItemPressed,
-          ]}>
-          <Text style={styles.sheetItemText}>Log out</Text>
-        </Pressable>
-      </Sheet>
-    </>
+    <NavigationContainer>
+      <RootNavigator />
+    </NavigationContainer>
   );
 }
 
@@ -124,45 +70,6 @@ const styles = StyleSheet.create({
   splash: {
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  avatarButton: {
-    position: 'absolute',
-    right: 16,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#1d6fe0',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    shadowOffset: {width: 0, height: 2},
-    elevation: 4,
-  },
-  avatarPressed: {opacity: 0.8},
-  avatarText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  sheetEmail: {
-    fontSize: 12,
-    color: '#666',
-    paddingHorizontal: 12,
-    paddingBottom: 8,
-  },
-  sheetItem: {
-    paddingHorizontal: 12,
-    paddingVertical: 14,
-    borderRadius: 8,
-  },
-  sheetItemPressed: {
-    backgroundColor: '#f2f2f2',
-  },
-  sheetItemText: {
-    fontSize: 16,
-    color: '#222',
   },
 });
 

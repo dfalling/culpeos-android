@@ -1,61 +1,48 @@
 import {type ReactNode, useEffect, useRef, useState} from 'react';
-import {
-  Animated,
-  BackHandler,
-  Pressable,
-  StyleSheet,
-  useWindowDimensions,
-  View,
-} from 'react-native';
+import {Animated, BackHandler, Pressable, StyleSheet, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-type SheetVariant = 'bottom' | 'fullscreen';
-
 type Props = {
   visible: boolean;
   onClose: () => void;
-  /** `bottom` (default): dim scrim + bottom-anchored card. `fullscreen`: opaque full-screen. */
-  variant?: SheetVariant;
-  /** Tap the scrim to close (bottom variant only). Defaults to true. */
+  /** Tap the scrim to close. Defaults to true. */
   dismissOnScrimPress?: boolean;
-  /** Accessibility label for the scrim's close affordance (bottom variant). */
+  /** Accessibility label for the scrim's close affordance. */
   scrimAccessibilityLabel?: string;
   children: ReactNode;
 };
 
 /**
- * In-tree modal sheet. Rendered as an absolute overlay (not a React Native
- * `Modal`) so it inherits the app's edge-to-edge window and draws behind the
- * status and navigation bars. RN's `Modal` renders in a separate window whose
- * `statusBarTranslucent`/`navigationBarTranslucent` props don't reliably do
- * this on RN 0.85 + Android 15, which left scrims and sheets stopping at the
- * system bars.
+ * In-tree bottom sheet: a dim scrim plus a bottom-anchored card. Rendered as an
+ * absolute overlay (not a React Native `Modal`) so it inherits the app's
+ * edge-to-edge window and draws behind the status and navigation bars. RN's
+ * `Modal` renders in a separate window whose `statusBarTranslucent`/
+ * `navigationBarTranslucent` props don't reliably do this on RN 0.85 +
+ * Android 15, which left scrims and sheets stopping at the system bars.
  *
  * Owns the slide animation, hardware-back handling, and pointer-event gating;
- * callers supply the content (and their own safe-area padding for fullscreen).
+ * callers supply the content.
  */
 export function Sheet({
   visible,
   onClose,
-  variant = 'bottom',
   dismissOnScrimPress = true,
   scrimAccessibilityLabel = 'Close',
   children,
 }: Props) {
   const safeAreaInsets = useSafeAreaInsets();
-  const {height} = useWindowDimensions();
   const anim = useRef(new Animated.Value(0)).current;
   const [sheetHeight, setSheetHeight] = useState(0);
 
   useEffect(() => {
     Animated.timing(anim, {
       toValue: visible ? 1 : 0,
-      duration: variant === 'fullscreen' ? 250 : 220,
+      duration: 220,
       useNativeDriver: true,
     }).start();
-  }, [visible, variant, anim]);
+  }, [visible, anim]);
 
   // The hardware back button closes the sheet (RN Modal used to handle this).
   useEffect(() => {
@@ -68,24 +55,6 @@ export function Sheet({
     });
     return () => sub.remove();
   }, [visible, onClose]);
-
-  if (variant === 'fullscreen') {
-    const translateY = anim.interpolate({
-      inputRange: [0, 1],
-      outputRange: [height, 0],
-    });
-    return (
-      <Animated.View
-        style={[
-          StyleSheet.absoluteFill,
-          styles.fullscreen,
-          {transform: [{translateY}]},
-        ]}
-        pointerEvents={visible ? 'auto' : 'none'}>
-        {children}
-      </Animated.View>
-    );
-  }
 
   const translateY = anim.interpolate({
     inputRange: [0, 1],
@@ -115,9 +84,6 @@ export function Sheet({
 }
 
 const styles = StyleSheet.create({
-  fullscreen: {
-    backgroundColor: '#ffffff',
-  },
   scrim: {
     position: 'absolute',
     top: 0,
