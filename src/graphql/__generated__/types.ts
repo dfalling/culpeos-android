@@ -572,7 +572,7 @@ export type ElementDetailQueryVariables = Exact<{
 }>;
 
 
-export type ElementDetailQuery = { __typename?: 'RootQueryType', element: { __typename?: 'Element', id: string, name: string, icon: string, description: string, completed: boolean, labels: Array<string>, location?: { __typename?: 'Location', id: string, address: string, latitude: number, longitude: number } | null, photos: Array<{ __typename?: 'Photo', id: string, thumbnail: string, regular: string, description: string }>, schedule?: { __typename?: 'Schedule', id: string, allDay: boolean, startDate: any, endDate: any, startTime?: any | null, endTime?: any | null } | null } };
+export type ElementDetailQuery = { __typename?: 'RootQueryType', element: { __typename?: 'Element', id: string, name: string, icon: string, description: string, completed: boolean, uri: string, labels: Array<string>, trips: Array<{ __typename?: 'Trip', id: string }>, location?: { __typename?: 'Location', id: string, address: string, latitude: number, longitude: number, placeId?: string | null } | null, photos: Array<{ __typename?: 'Photo', id: string, thumbnail: string, regular: string, description: string }>, schedule?: { __typename?: 'Schedule', id: string, allDay: boolean, startDate: any, endDate: any, startTime?: any | null, endTime?: any | null, startTz: string, endTz: string } | null } };
 
 export type ElementsQueryVariables = Exact<{
   bounds?: InputMaybe<GeoBounds>;
@@ -610,6 +610,13 @@ export type SearchQueryVariables = Exact<{
 
 export type SearchQuery = { __typename?: 'RootQueryType', elements: Array<{ __typename?: 'Element', id: string, name: string, icon: string, location?: { __typename?: 'Location', id: string, address: string, latitude: number, longitude: number } | null }>, trips: Array<{ __typename?: 'Trip', id: string, name: string, icon: string, description: string }>, placeSearch: Array<{ __typename?: 'GooglePlace', placeId: string, name: string, address: string, latitude: number, longitude: number, types?: Array<string> | null }> };
 
+export type UpdateElementMutationVariables = Exact<{
+  input: ElementInput;
+}>;
+
+
+export type UpdateElementMutation = { __typename?: 'RootMutationType', updateElement: { __typename?: 'Element', id: string, name: string, icon: string, description: string, completed: boolean, uri: string, labels: Array<string>, trips: Array<{ __typename?: 'Trip', id: string }>, location?: { __typename?: 'Location', id: string, address: string, latitude: number, longitude: number, placeId?: string | null } | null, photos: Array<{ __typename?: 'Photo', id: string, thumbnail: string, regular: string, description: string }>, schedule?: { __typename?: 'Schedule', id: string, allDay: boolean, startDate: any, endDate: any, startTime?: any | null, endTime?: any | null, startTz: string, endTz: string } | null } };
+
 
 export const ElementDetailDocument = gql`
     query ElementDetail($id: String!) {
@@ -619,12 +626,17 @@ export const ElementDetailDocument = gql`
     icon
     description
     completed
+    uri
     labels
+    trips {
+      id
+    }
     location {
       id
       address
       latitude
       longitude
+      placeId
     }
     photos {
       id
@@ -639,6 +651,8 @@ export const ElementDetailDocument = gql`
       endDate
       startTime
       endTime
+      startTz
+      endTz
     }
   }
 }
@@ -908,3 +922,68 @@ export type SearchQueryHookResult = ReturnType<typeof useSearchQuery>;
 export type SearchLazyQueryHookResult = ReturnType<typeof useSearchLazyQuery>;
 export type SearchSuspenseQueryHookResult = ReturnType<typeof useSearchSuspenseQuery>;
 export type SearchQueryResult = Apollo.QueryResult<SearchQuery, SearchQueryVariables>;
+export const UpdateElementDocument = gql`
+    mutation UpdateElement($input: ElementInput!) {
+  updateElement(input: $input) {
+    id
+    name
+    icon
+    description
+    completed
+    uri
+    labels
+    trips {
+      id
+    }
+    location {
+      id
+      address
+      latitude
+      longitude
+      placeId
+    }
+    photos {
+      id
+      thumbnail
+      regular
+      description
+    }
+    schedule {
+      id
+      allDay
+      startDate
+      endDate
+      startTime
+      endTime
+      startTz
+      endTz
+    }
+  }
+}
+    `;
+export type UpdateElementMutationFn = Apollo.MutationFunction<UpdateElementMutation, UpdateElementMutationVariables>;
+
+/**
+ * __useUpdateElementMutation__
+ *
+ * To run a mutation, you first call `useUpdateElementMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUpdateElementMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [updateElementMutation, { data, loading, error }] = useUpdateElementMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useUpdateElementMutation(baseOptions?: Apollo.MutationHookOptions<UpdateElementMutation, UpdateElementMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<UpdateElementMutation, UpdateElementMutationVariables>(UpdateElementDocument, options);
+      }
+export type UpdateElementMutationHookResult = ReturnType<typeof useUpdateElementMutation>;
+export type UpdateElementMutationResult = Apollo.MutationResult<UpdateElementMutation>;
+export type UpdateElementMutationOptions = Apollo.BaseMutationOptions<UpdateElementMutation, UpdateElementMutationVariables>;
