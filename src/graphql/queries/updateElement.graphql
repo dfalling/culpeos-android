@@ -1,5 +1,5 @@
-query ElementDetail($id: String!) {
-  element(id: $id) {
+mutation UpdateElement($input: ElementInput!) {
+  updateElement(input: $input) {
     id
     name
     icon
