@@ -15,6 +15,7 @@
         "react-native-encrypted-storage": "^4.0.3",
         "react-native-safe-area-context": "^5.5.2",
         "react-native-screens": "^4.25.2",
+        "rn-emoji-keyboard": "^1.7.0",
       },
       "devDependencies": {
         "@babel/core": "^7.25.2",
@@ -1403,6 +1404,8 @@
     "reusify": ["reusify@1.1.0", "", {}, "sha512-g6QUff04oZpHs0eG5p83rFLhHeV00ug/Yf9nZM6fLeUrPguBTkTQOdpAWWspMh55TZfVQDPaN3NQJfbVRAxdIw=="],
 
     "rfdc": ["rfdc@1.4.1", "", {}, "sha512-q1b3N5QkRUWUl7iyylaaj3kOpIT0N2i9MqIEQXP73GVsN9cw3fdx8X63cEmWhJGi2PPCF23Ijp7ktmd39rawIA=="],
+
+    "rn-emoji-keyboard": ["rn-emoji-keyboard@1.7.0", "", { "peerDependencies": { "react": "*", "react-native": "*" } }, "sha512-Yo5yJB+joYqSgvZx7WX/DMAC6rHUEJOQFYNjevd+jzhON23SSg/8kq2r9MH/kIdkNGdQWwIVBPowWqZwRQdfOA=="],
 
     "run-async": ["run-async@2.4.1", "", {}, "sha512-tvVnVv01b8c1RrA6Ep7JkStj85Guv/YrMcwqYQnwjsAS2cTmmPGBBjAjpCW7RrSodNSoE2/qg9O4bceNvUuDgQ=="],
 

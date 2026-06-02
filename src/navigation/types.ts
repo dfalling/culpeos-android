@@ -8,6 +8,7 @@ import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 export type RootStackParamList = {
   Map: undefined;
   ElementDetail: {elementId: string};
+  ElementEdit: {elementId: string};
 };
 
 export type RootStackNavigation = NativeStackNavigationProp<RootStackParamList>;

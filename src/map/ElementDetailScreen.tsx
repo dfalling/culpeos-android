@@ -29,6 +29,7 @@ export function ElementDetailScreen({route, navigation}: Props) {
         element={data?.element ?? null}
         loading={loading}
         onClose={() => navigation.goBack()}
+        onEdit={() => navigation.navigate('ElementEdit', {elementId})}
       />
     </View>
   );
@@ -38,10 +39,12 @@ function ModalContents({
   element,
   loading,
   onClose,
+  onEdit,
 }: {
   element: ElementDetail | null;
   loading: boolean;
   onClose: () => void;
+  onEdit: () => void;
 }) {
   const safeAreaInsets = useSafeAreaInsets();
 
@@ -59,6 +62,16 @@ function ModalContents({
         <Text style={styles.headerTitle} numberOfLines={1}>
           {element?.name ?? (loading ? 'Loading…' : ' ')}
         </Text>
+        {element ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Edit element"
+            hitSlop={10}
+            onPress={onEdit}
+            style={styles.editButton}>
+            <Text style={styles.editButtonText}>Edit</Text>
+          </Pressable>
+        ) : null}
       </View>
 
       {element ? (
@@ -198,6 +211,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#111',
+  },
+  editButton: {
+    marginLeft: 12,
+    paddingHorizontal: 4,
+  },
+  editButtonText: {
+    fontSize: 16,
+    color: '#0a7ea4',
+    fontWeight: '600',
   },
   scrollContent: {
     padding: 16,

@@ -1,5 +1,6 @@
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {ElementDetailScreen} from '../map/ElementDetailScreen';
+import {ElementEditScreen} from '../map/ElementEditScreen';
 import {MapScreen} from '../map/MapScreen';
 import type {RootStackParamList} from './types';
 
@@ -16,6 +17,7 @@ export function RootNavigator() {
       screenOptions={{headerShown: false, animation: 'slide_from_right'}}>
       <Stack.Screen name="Map" component={MapScreen} />
       <Stack.Screen name="ElementDetail" component={ElementDetailScreen} />
+      <Stack.Screen name="ElementEdit" component={ElementEditScreen} />
     </Stack.Navigator>
   );
 }
