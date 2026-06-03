@@ -8,7 +8,11 @@ import {
   useCurrentPosition,
   type ViewStateChangeEvent,
 } from '@maplibre/maplibre-react-native';
-import {useNavigation} from '@react-navigation/native';
+import {
+  type RouteProp,
+  useNavigation,
+  useRoute,
+} from '@react-navigation/native';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import type {NativeSyntheticEvent} from 'react-native';
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
@@ -17,10 +21,15 @@ import {AccountMenu} from '../account/AccountMenu';
 import {
   type ElementsQuery,
   type ElementsQueryVariables,
+  LabelMatchMode,
   useElementsQuery,
 } from '../graphql/__generated__/types';
-import type {RootStackNavigation} from '../navigation/types';
+import type {
+  RootStackNavigation,
+  RootStackParamList,
+} from '../navigation/types';
 import {ElementPreviewCard} from './ElementPreviewCard';
+import {FilterChips} from './FilterChips';
 import {zoomForPlaceTypes} from './placeZoom';
 import {
   type SearchElement,
@@ -28,7 +37,6 @@ import {
   type SearchPlace,
   type SearchTrip,
 } from './SearchOverlay';
-import {TripFilterChip} from './TripFilterChip';
 import {type Viewport, viewportStore} from './viewportStore';
 
 type ElementWithLocation = ElementsQuery['elements'][number];
@@ -52,6 +60,7 @@ const BOTTOM_MARGIN = 16;
 
 export function MapScreen() {
   const navigation = useNavigation<RootStackNavigation>();
+  const route = useRoute<RouteProp<RootStackParamList, 'Map'>>();
   const cameraRef = useRef<CameraRef>(null);
   // Gate the bounds fetch + viewport-save until we know the map is sitting on
   // a real location — either a restored viewport or a fly-to-user. Prevents
@@ -76,7 +85,23 @@ export function MapScreen() {
     name: string;
     icon: string;
   } | null>(null);
+  // Labels the map is filtered by, combined with the trip filter (if any) and
+  // matched with ALL semantics so each added label narrows the results further.
+  const [labelFilters, setLabelFilters] = useState<string[]>([]);
   const safeAreaInsets = useSafeAreaInsets();
+
+  // A label tapped in the element details navigates back here with the label in
+  // route params; fold it into the active filters, then clear the param so it
+  // isn't re-applied on subsequent renders or when the screen regains focus.
+  const pendingLabel = route.params?.addLabelFilter;
+  useEffect(() => {
+    if (!pendingLabel) return;
+    setSelectedElementId(null);
+    setLabelFilters(prev =>
+      prev.includes(pendingLabel) ? prev : [...prev, pendingLabel],
+    );
+    navigation.setParams({addLabelFilter: undefined});
+  }, [pendingLabel, navigation]);
 
   useEffect(() => {
     let cancelled = false;
@@ -177,13 +202,24 @@ export function MapScreen() {
     return offLng <= OFF_CENTER_THRESHOLD && offLat <= OFF_CENTER_THRESHOLD;
   }, [position, viewportState]);
 
+  // Label filters apply on top of either mode below, narrowing the server-side
+  // result. When none are active the vars are omitted so the query is unchanged.
+  const labelVars = useMemo(
+    () =>
+      labelFilters.length > 0
+        ? {labels: labelFilters, labelsMatch: LabelMatchMode.All}
+        : undefined,
+    [labelFilters],
+  );
+
   // One query, two modes: when a trip filter is active fetch that trip's
   // elements; otherwise fetch by viewport bounds. Reusing the single hook keeps
-  // the element shape (and Apollo cache) identical across modes.
+  // the element shape (and Apollo cache) identical across modes. Label filters
+  // (if any) are layered onto whichever mode is active.
   const {data, loading: elementsLoading} = useElementsQuery(
     tripFilter
-      ? {variables: {tripId: tripFilter.id}}
-      : {skip: !bounds, variables: bounds ? {bounds} : undefined},
+      ? {variables: {tripId: tripFilter.id, ...labelVars}}
+      : {skip: !bounds, variables: bounds ? {bounds, ...labelVars} : undefined},
   );
 
   // Accumulate elements across viewport fetches so pins persist while a new
@@ -211,9 +247,13 @@ export function MapScreen() {
     return Array.from(elementsById.values()).filter(el => {
       if (!el.location) return false;
       const {longitude: lng, latitude: lat} = el.location;
-      return lng >= left && lng <= right && lat >= bottom && lat <= top;
+      if (lng < left || lng > right || lat < bottom || lat > top) return false;
+      // Apply the label filter client-side too (matching the query's ALL
+      // semantics) so pins accumulated before the filter was set — or that no
+      // longer match it — stop rendering without waiting for a refetch.
+      return labelFilters.every(label => el.labels.includes(label));
     });
-  }, [elementsById, bounds]);
+  }, [elementsById, bounds, labelFilters]);
 
   // Elements with a location for the active trip; drives both the markers and
   // the camera fit while filtering.
@@ -271,6 +311,7 @@ export function MapScreen() {
   const handleSelectElement = useCallback(
     (element: SearchElement) => {
       setTripFilter(null);
+      setLabelFilters([]);
       if (element.location) {
         const {longitude, latitude} = element.location;
         // Seed the marker set so the pin is present immediately, before the
@@ -303,6 +344,7 @@ export function MapScreen() {
 
   const handleSelectPlace = useCallback((place: SearchPlace) => {
     setTripFilter(null);
+    setLabelFilters([]);
     cameraRef.current?.flyTo({
       center: [place.longitude, place.latitude],
       zoom: zoomForPlaceTypes(place.types),
@@ -376,14 +418,15 @@ export function MapScreen() {
           }
         />
       ) : null}
-      {tripFilter ? (
-        <TripFilterChip
-          icon={tripFilter.icon}
-          name={tripFilter.name}
-          topOffset={safeAreaInsets.top + 12 + 52}
-          onClear={() => setTripFilter(null)}
-        />
-      ) : null}
+      <FilterChips
+        trip={tripFilter}
+        labels={labelFilters}
+        topOffset={safeAreaInsets.top + 12 + 52}
+        onClearTrip={() => setTripFilter(null)}
+        onClearLabel={label =>
+          setLabelFilters(prev => prev.filter(l => l !== label))
+        }
+      />
       <SearchOverlay
         topOffset={safeAreaInsets.top + 12}
         onSelectElement={handleSelectElement}
