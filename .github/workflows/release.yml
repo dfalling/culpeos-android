@@ -56,6 +56,12 @@ jobs:
 
       - name: Install SOPS
         uses: nhedger/setup-sops@v2
+        env:
+          # mise-action exports a job-wide GITHUB_TOKEN; setup-sops also passes
+          # its own default `token` input. octokit's auth-action rejects the
+          # token being specified twice, so clear the inherited env var here and
+          # let the action use its own input.
+          GITHUB_TOKEN: ''
 
       - name: Decrypt signing secrets
         env:
