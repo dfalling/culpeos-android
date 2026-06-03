@@ -50,3 +50,6 @@ package-lock.json
 # don't leak full introspection). Pass its path/URL to `bun run codegen`.
 /schema.json
 /schema.graphql
+
+# workmux — local worktree/tmux workflow config, not shared
+/.workmux.yaml
