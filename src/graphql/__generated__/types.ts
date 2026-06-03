@@ -577,10 +577,12 @@ export type ElementDetailQuery = { __typename?: 'RootQueryType', element: { __ty
 export type ElementsQueryVariables = Exact<{
   bounds?: InputMaybe<GeoBounds>;
   tripId?: InputMaybe<Scalars['String']['input']>;
+  labels?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
+  labelsMatch?: InputMaybe<LabelMatchMode>;
 }>;
 
 
-export type ElementsQuery = { __typename?: 'RootQueryType', elements: Array<{ __typename?: 'Element', id: string, name: string, icon: string, location?: { __typename?: 'Location', id: string, latitude: number, longitude: number } | null }> };
+export type ElementsQuery = { __typename?: 'RootQueryType', elements: Array<{ __typename?: 'Element', id: string, name: string, icon: string, labels: Array<string>, location?: { __typename?: 'Location', id: string, latitude: number, longitude: number } | null }> };
 
 export type LoginMutationVariables = Exact<{
   input: LoginInput;
@@ -608,7 +610,7 @@ export type SearchQueryVariables = Exact<{
 }>;
 
 
-export type SearchQuery = { __typename?: 'RootQueryType', elements: Array<{ __typename?: 'Element', id: string, name: string, icon: string, location?: { __typename?: 'Location', id: string, address: string, latitude: number, longitude: number } | null }>, trips: Array<{ __typename?: 'Trip', id: string, name: string, icon: string, description: string }>, placeSearch: Array<{ __typename?: 'GooglePlace', placeId: string, name: string, address: string, latitude: number, longitude: number, types?: Array<string> | null }> };
+export type SearchQuery = { __typename?: 'RootQueryType', elements: Array<{ __typename?: 'Element', id: string, name: string, icon: string, labels: Array<string>, location?: { __typename?: 'Location', id: string, address: string, latitude: number, longitude: number } | null }>, trips: Array<{ __typename?: 'Trip', id: string, name: string, icon: string, description: string }>, placeSearch: Array<{ __typename?: 'GooglePlace', placeId: string, name: string, address: string, latitude: number, longitude: number, types?: Array<string> | null }> };
 
 export type UpdateElementMutationVariables = Exact<{
   input: ElementInput;
@@ -694,11 +696,17 @@ export type ElementDetailLazyQueryHookResult = ReturnType<typeof useElementDetai
 export type ElementDetailSuspenseQueryHookResult = ReturnType<typeof useElementDetailSuspenseQuery>;
 export type ElementDetailQueryResult = Apollo.QueryResult<ElementDetailQuery, ElementDetailQueryVariables>;
 export const ElementsDocument = gql`
-    query Elements($bounds: GeoBounds, $tripId: String) {
-  elements(bounds: $bounds, tripId: $tripId) {
+    query Elements($bounds: GeoBounds, $tripId: String, $labels: [String!], $labelsMatch: LabelMatchMode) {
+  elements(
+    bounds: $bounds
+    tripId: $tripId
+    labels: $labels
+    labelsMatch: $labelsMatch
+  ) {
     id
     name
     icon
+    labels
     location {
       id
       latitude
@@ -863,6 +871,7 @@ export const SearchDocument = gql`
     id
     name
     icon
+    labels
     location {
       id
       address

@@ -6,7 +6,9 @@ import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
  * fighting it for z-order as the old in-tree modal did.
  */
 export type RootStackParamList = {
-  Map: undefined;
+  // `addLabelFilter` is set when returning to the map from a detail surface to
+  // add a tapped label to the active filters; the map consumes and clears it.
+  Map: {addLabelFilter?: string} | undefined;
   ElementDetail: {elementId: string};
   ElementEdit: {elementId: string};
 };

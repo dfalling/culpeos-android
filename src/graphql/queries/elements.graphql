@@ -1,8 +1,19 @@
-query Elements($bounds: GeoBounds, $tripId: String) {
-  elements(bounds: $bounds, tripId: $tripId) {
+query Elements(
+  $bounds: GeoBounds
+  $tripId: String
+  $labels: [String!]
+  $labelsMatch: LabelMatchMode
+) {
+  elements(
+    bounds: $bounds
+    tripId: $tripId
+    labels: $labels
+    labelsMatch: $labelsMatch
+  ) {
     id
     name
     icon
+    labels
     location {
       id
       latitude

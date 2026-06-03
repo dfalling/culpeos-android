@@ -3,6 +3,7 @@ query Search($query: String!) {
     id
     name
     icon
+    labels
     location {
       id
       address
