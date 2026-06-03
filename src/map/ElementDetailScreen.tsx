@@ -30,6 +30,12 @@ export function ElementDetailScreen({route, navigation}: Props) {
         loading={loading}
         onClose={() => navigation.goBack()}
         onEdit={() => navigation.navigate('ElementEdit', {elementId})}
+        // Tapping a label closes the details and adds it to the map's active
+        // filters. popTo (not navigate) so the detail screen animates backward
+        // off the stack — closing — rather than pushing a new level forward.
+        onSelectLabel={label =>
+          navigation.popTo('Map', {addLabelFilter: label})
+        }
       />
     </View>
   );
@@ -40,11 +46,13 @@ function ModalContents({
   loading,
   onClose,
   onEdit,
+  onSelectLabel,
 }: {
   element: ElementDetail | null;
   loading: boolean;
   onClose: () => void;
   onEdit: () => void;
+  onSelectLabel: (label: string) => void;
 }) {
   const safeAreaInsets = useSafeAreaInsets();
 
@@ -132,9 +140,17 @@ function ModalContents({
             <Section title="Labels">
               <View style={styles.labelRow}>
                 {element.labels.map(label => (
-                  <View key={label} style={styles.labelChip}>
+                  <Pressable
+                    key={label}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Filter map by label ${label}`}
+                    onPress={() => onSelectLabel(label)}
+                    style={({pressed}) => [
+                      styles.labelChip,
+                      pressed && styles.labelChipPressed,
+                    ]}>
                     <Text style={styles.labelChipText}>{label}</Text>
-                  </View>
+                  </Pressable>
                 ))}
               </View>
             </Section>
@@ -304,6 +320,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 12,
+  },
+  labelChipPressed: {
+    backgroundColor: '#dde7f7',
   },
   labelChipText: {
     color: '#1d6fe0',
