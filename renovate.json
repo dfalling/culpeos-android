@@ -1,0 +1,36 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "packageRules": [
+    {
+      "description": "Group the React Native core and its tooling — they are pinned to the same release and must bump atomically",
+      "matchPackageNames": [
+        "react-native",
+        "/^@react-native\\//",
+        "/^@react-native-community\\//"
+      ],
+      "groupName": "react-native"
+    },
+    {
+      "description": "Group React and its companions — react-test-renderer is pinned to the React version",
+      "matchPackageNames": ["react", "react-test-renderer", "@types/react"],
+      "groupName": "react"
+    },
+    {
+      "description": "Group all GraphQL Codegen packages together",
+      "matchPackageNames": ["/^@graphql-codegen\\//"],
+      "groupName": "graphql-codegen"
+    },
+    {
+      "description": "Group all React Navigation packages together",
+      "matchPackageNames": ["/^@react-navigation\\//"],
+      "groupName": "react-navigation"
+    },
+    {
+      "description": "Auto-merge patch updates for GitHub Actions",
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["patch"],
+      "automerge": true
+    }
+  ]
+}
