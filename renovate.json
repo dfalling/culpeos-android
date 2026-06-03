@@ -12,9 +12,14 @@
       "groupName": "react-native"
     },
     {
-      "description": "Group React and its companions — react-test-renderer is pinned to the React version",
-      "matchPackageNames": ["react", "react-test-renderer", "@types/react"],
-      "groupName": "react"
+      "description": "Do not bump react/react-test-renderer on their own — they must exactly match the react-native-renderer bundled in react-native. React asserts that equality at runtime, but react-native only declares a loose peer range (e.g. ^19.2.3), so Renovate would otherwise raise react past the bundled renderer and crash the app at launch (this happened: react 19.2.7 vs renderer 19.2.3). Renovate cannot read the bundled renderer version, so these are pinned and updated by hand together with the react-native upgrade.",
+      "matchPackageNames": ["react", "react-test-renderer"],
+      "enabled": false
+    },
+    {
+      "description": "@types/react tracks the public React API, not the bundled renderer, so it is safe to update on its own",
+      "matchPackageNames": ["@types/react"],
+      "groupName": "react-types"
     },
     {
       "description": "Group all GraphQL Codegen packages together",
