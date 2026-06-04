@@ -9,7 +9,10 @@
         "/^@react-native\\//",
         "/^@react-native-community\\//"
       ],
-      "groupName": "react-native"
+      "groupName": "react-native",
+      "prBodyNotes": [
+        ":warning: **Manual step required before merging.** This PR does **not** update `react` or `react-test-renderer` — they are pinned by hand (see the disabled rule in `renovate.json`). After this bump, find the renderer version react-native ships with: `grep -rhoE '19\\.[0-9.]+' node_modules/react-native/Libraries/Renderer/implementations/ReactFabric-prod.js | sort -u`, then set both `react` and `react-test-renderer` in `package.json` to exactly that version and run `bun install`. Mismatched versions crash the app at launch."
+      ]
     },
     {
       "description": "Do not bump react/react-test-renderer on their own — they must exactly match the react-native-renderer bundled in react-native. React asserts that equality at runtime, but react-native only declares a loose peer range (e.g. ^19.2.3), so Renovate would otherwise raise react past the bundled renderer and crash the app at launch (this happened: react 19.2.7 vs renderer 19.2.3). Renovate cannot read the bundled renderer version, so these are pinned and updated by hand together with the react-native upgrade.",
