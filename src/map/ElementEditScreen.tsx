@@ -82,7 +82,11 @@ function EditForm({element, onDone}: {element: Element; onDone: () => void}) {
   const uriError =
     trimmedUri.length > 0 && !uriValid ? 'Enter a valid URL.' : null;
 
-  const canSave = name.trim().length > 0 && uriValid && !saving && !uploading;
+  const canSave =
+    name.trim().length > 0 &&
+    (trimmedUri.length === 0 || uriValid) &&
+    !saving &&
+    !uploading;
 
   async function onAddPhoto() {
     setErrorMessage(null);
