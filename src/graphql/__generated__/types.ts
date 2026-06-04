@@ -215,11 +215,15 @@ export type Photo = {
  * - `s3`: `storage_key` (image URLs are derived server-side)
  * - `unsplash`: `full`, `regular`, `small`, `thumbnail`, `credit_name`, `attribution_url`
  * - `wikimedia`: the unsplash fields plus `license`
+ *
+ * `description` is the image's alt text. It is optional for `s3` photos
+ * (defaults to "" when omitted) but required for `unsplash`/`wikimedia`.
  */
 export type PhotoInput = {
   attributionUrl?: InputMaybe<Scalars['String']['input']>;
   creditName?: InputMaybe<Scalars['String']['input']>;
   creditUrl?: InputMaybe<Scalars['String']['input']>;
+  /** Image alt text. Optional for s3 (defaults to ""); required for unsplash/wikimedia. */
   description?: InputMaybe<Scalars['String']['input']>;
   full?: InputMaybe<Scalars['String']['input']>;
   license?: InputMaybe<Scalars['String']['input']>;
