@@ -8,6 +8,21 @@ jest.mock('react-native-encrypted-storage', () => ({
   },
 }));
 
+jest.mock('react-native-image-picker', () => ({
+  __esModule: true,
+  launchImageLibrary: jest.fn(() => Promise.resolve({didCancel: true})),
+  launchCamera: jest.fn(() => Promise.resolve({didCancel: true})),
+}));
+
+jest.mock('@bam.tech/react-native-image-resizer', () => ({
+  __esModule: true,
+  default: {
+    createResizedImage: jest.fn(() =>
+      Promise.resolve({uri: 'file:///resized.jpg', size: 1024}),
+    ),
+  },
+}));
+
 jest.mock('@maplibre/maplibre-react-native', () => {
   const React = require('react');
   const passthrough = name => {

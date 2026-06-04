@@ -2,6 +2,7 @@ import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useState} from 'react';
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -21,6 +22,7 @@ import {
   useUpdateElementMutation,
 } from '../graphql/__generated__/types';
 import type {RootStackParamList} from '../navigation/types';
+import {usePhotoUploader} from '../photos/photoUpload';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ElementEdit'>;
 
@@ -65,16 +67,41 @@ function EditForm({element, onDone}: {element: Element; onDone: () => void}) {
   const [icon, setIcon] = useState(element.icon);
   const [description, setDescription] = useState(element.description);
   const [completed, setCompleted] = useState(element.completed);
+  // The complete desired set of photos, in display order. Initialized from the
+  // element and mutated as the user adds/removes; sent as photoIds on save.
+  const [photos, setPhotos] = useState<{id: string; thumbnail: string}[]>(() =>
+    element.photos.map(photo => ({id: photo.id, thumbnail: photo.thumbnail})),
+  );
   const [pickerOpen, setPickerOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [updateElement, {loading: saving}] = useUpdateElementMutation();
+  const {pickAndUpload, uploading} = usePhotoUploader();
 
   const trimmedUri = uri.trim();
   const uriValid = isValidUrl(trimmedUri);
   const uriError =
     trimmedUri.length > 0 && !uriValid ? 'Enter a valid URL.' : null;
 
-  const canSave = name.trim().length > 0 && uriValid && !saving;
+  const canSave = name.trim().length > 0 && uriValid && !saving && !uploading;
+
+  async function onAddPhoto() {
+    setErrorMessage(null);
+    try {
+      const photo = await pickAndUpload();
+      if (photo) {
+        setPhotos(prev => [
+          ...prev,
+          {id: photo.id, thumbnail: photo.thumbnail},
+        ]);
+      }
+    } catch {
+      setErrorMessage('Could not add photo. Please try again.');
+    }
+  }
+
+  function onRemovePhoto(id: string) {
+    setPhotos(prev => prev.filter(photo => photo.id !== id));
+  }
 
   async function onSave() {
     setErrorMessage(null);
@@ -85,6 +112,8 @@ function EditForm({element, onDone}: {element: Element; onDone: () => void}) {
       icon,
       description,
       completed,
+      // Complete desired set of photo ids, in order: reorders/removes/adds.
+      photoIds: photos.map(photo => photo.id),
       // Preserved as-is — not editable here, but required by the mutation.
       labels: element.labels,
       tripIds: element.trips.map(trip => trip.id),
@@ -210,6 +239,40 @@ function EditForm({element, onDone}: {element: Element; onDone: () => void}) {
           />
         </View>
 
+        <Field label="Photos">
+          <View style={styles.photoGrid}>
+            {photos.map(photo => (
+              <View key={photo.id} style={styles.photoThumbWrap}>
+                <Image
+                  source={{uri: photo.thumbnail}}
+                  style={styles.photoThumb}
+                />
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Remove photo"
+                  hitSlop={8}
+                  disabled={saving || uploading}
+                  onPress={() => onRemovePhoto(photo.id)}
+                  style={styles.photoRemove}>
+                  <Text style={styles.photoRemoveIcon}>×</Text>
+                </Pressable>
+              </View>
+            ))}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Add photo"
+              disabled={saving || uploading}
+              onPress={onAddPhoto}
+              style={styles.photoAdd}>
+              {uploading ? (
+                <ActivityIndicator />
+              ) : (
+                <Text style={styles.photoAddIcon}>＋</Text>
+              )}
+            </Pressable>
+          </View>
+        </Field>
+
         <Field label="Description">
           <TextInput
             style={[styles.input, styles.multiline]}
@@ -326,6 +389,52 @@ const styles = StyleSheet.create({
   },
   multiline: {
     minHeight: 120,
+  },
+  photoGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  photoThumbWrap: {
+    width: 80,
+    height: 80,
+  },
+  photoThumb: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    backgroundColor: '#eee',
+  },
+  photoRemove: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#222',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  photoRemoveIcon: {
+    color: '#fff',
+    fontSize: 16,
+    lineHeight: 18,
+    fontWeight: '600',
+  },
+  photoAdd: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  photoAddIcon: {
+    fontSize: 28,
+    color: '#aaa',
   },
   switchRow: {
     flexDirection: 'row',

@@ -1,0 +1,6 @@
+query CreateUploadUrl($bustCache: Int) {
+  createUploadUrl(bustCache: $bustCache) {
+    url
+    key
+  }
+}
