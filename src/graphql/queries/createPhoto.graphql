@@ -1,0 +1,8 @@
+mutation CreatePhoto($input: PhotoInput!) {
+  createPhoto(input: $input) {
+    id
+    thumbnail
+    regular
+    description
+  }
+}
