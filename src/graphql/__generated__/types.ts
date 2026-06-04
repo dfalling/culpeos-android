@@ -41,6 +41,8 @@ export type CreateElementInput = {
   labels?: InputMaybe<Array<Scalars['String']['input']>>;
   location?: InputMaybe<LocationInput>;
   name: Scalars['String']['input'];
+  /** Ordered list of photo ids (from createPhoto) to attach to the element. */
+  photoIds?: InputMaybe<Array<Scalars['String']['input']>>;
   schedule?: InputMaybe<ScheduleInput>;
   tripIds?: InputMaybe<Array<Scalars['String']['input']>>;
   uri: Scalars['String']['input'];
@@ -53,6 +55,8 @@ export type CreatePermissionInput = {
 };
 
 export type CreateTripInput = {
+  /** Id of a photo (from createPhoto) to use as the banner. If omitted, a default is chosen from the name. */
+  bannerPhotoId?: InputMaybe<Scalars['String']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
   name: Scalars['String']['input'];
   timeZone?: InputMaybe<Scalars['String']['input']>;
@@ -81,6 +85,8 @@ export type ElementInput = {
   labels?: InputMaybe<Array<Scalars['String']['input']>>;
   location?: InputMaybe<LocationInput>;
   name: Scalars['String']['input'];
+  /** The element's photos, as an ordered list of photo ids (from createPhoto). This is the complete desired set: reordering, removing, or adding ids reorders/removes/adds photos. Omit to leave photos unchanged. */
+  photoIds?: InputMaybe<Array<Scalars['String']['input']>>;
   schedule?: InputMaybe<ScheduleInput>;
   tripIds?: InputMaybe<Array<Scalars['String']['input']>>;
   uri: Scalars['String']['input'];
@@ -202,6 +208,29 @@ export type Photo = {
   type?: Maybe<PhotoType>;
 };
 
+/**
+ * A photo to create and attach to an element or trip inline, as part of an
+ * element/trip mutation. Required fields depend on `type`:
+ *
+ * - `s3`: `storage_key` (image URLs are derived server-side)
+ * - `unsplash`: `full`, `regular`, `small`, `thumbnail`, `credit_name`, `attribution_url`
+ * - `wikimedia`: the unsplash fields plus `license`
+ */
+export type PhotoInput = {
+  attributionUrl?: InputMaybe<Scalars['String']['input']>;
+  creditName?: InputMaybe<Scalars['String']['input']>;
+  creditUrl?: InputMaybe<Scalars['String']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  full?: InputMaybe<Scalars['String']['input']>;
+  license?: InputMaybe<Scalars['String']['input']>;
+  regular?: InputMaybe<Scalars['String']['input']>;
+  small?: InputMaybe<Scalars['String']['input']>;
+  /** Upload key from create_upload_url; required for s3 photos */
+  storageKey?: InputMaybe<Scalars['String']['input']>;
+  thumbnail?: InputMaybe<Scalars['String']['input']>;
+  type: PhotoType;
+};
+
 export type PhotoResult = {
   __typename?: 'PhotoResult';
   attributionUrl: Scalars['String']['output'];
@@ -283,9 +312,8 @@ export type RootMutationType = {
   confirmAccount: Scalars['String']['output'];
   createElement: Element;
   createPermission: Permission;
-  createS3Photo: Photo;
+  createPhoto: Photo;
   createTrip: Trip;
-  createUnsplashPhoto: Photo;
   deleteElement: Element;
   deletePermission: Permission;
   deleteTrip: Trip;
@@ -321,18 +349,13 @@ export type RootMutationTypeCreatePermissionArgs = {
 };
 
 
-export type RootMutationTypeCreateS3PhotoArgs = {
-  input: S3PhotoInput;
+export type RootMutationTypeCreatePhotoArgs = {
+  input: PhotoInput;
 };
 
 
 export type RootMutationTypeCreateTripArgs = {
   input: CreateTripInput;
-};
-
-
-export type RootMutationTypeCreateUnsplashPhotoArgs = {
-  input: UnsplashPhotoInput;
 };
 
 
@@ -481,11 +504,6 @@ export type RootQueryTypeTripsArgs = {
   search?: InputMaybe<Scalars['String']['input']>;
 };
 
-export type S3PhotoInput = {
-  description: Scalars['String']['input'];
-  storageKey: Scalars['String']['input'];
-};
-
 export type Schedule = {
   __typename?: 'Schedule';
   allDay: Scalars['Boolean']['output'];
@@ -535,6 +553,8 @@ export type Trip = {
 };
 
 export type TripInput = {
+  /** Id of a photo to set as the banner. Omit to leave unchanged. */
+  bannerPhotoId?: InputMaybe<Scalars['String']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
   icon?: InputMaybe<Scalars['String']['input']>;
   id: Scalars['String']['input'];
@@ -549,23 +569,26 @@ export type TripIntegrations = {
   publicUri?: Maybe<Scalars['String']['output']>;
 };
 
-export type UnsplashPhotoInput = {
-  attributionUrl: Scalars['String']['input'];
-  creditName: Scalars['String']['input'];
-  creditUrl?: InputMaybe<Scalars['String']['input']>;
-  description: Scalars['String']['input'];
-  full: Scalars['String']['input'];
-  regular: Scalars['String']['input'];
-  small: Scalars['String']['input'];
-  thumbnail: Scalars['String']['input'];
-};
-
 export type User = {
   __typename?: 'User';
   email: Scalars['String']['output'];
   id: Scalars['String']['output'];
   locale?: Maybe<Scalars['String']['output']>;
 };
+
+export type CreatePhotoMutationVariables = Exact<{
+  input: PhotoInput;
+}>;
+
+
+export type CreatePhotoMutation = { __typename?: 'RootMutationType', createPhoto: { __typename?: 'Photo', id: string, thumbnail: string, regular: string, description: string } };
+
+export type CreateUploadUrlQueryVariables = Exact<{
+  bustCache?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+
+export type CreateUploadUrlQuery = { __typename?: 'RootQueryType', createUploadUrl: { __typename?: 'FileUploadUrl', url: string, key: string } };
 
 export type ElementDetailQueryVariables = Exact<{
   id: Scalars['String']['input'];
@@ -620,6 +643,86 @@ export type UpdateElementMutationVariables = Exact<{
 export type UpdateElementMutation = { __typename?: 'RootMutationType', updateElement: { __typename?: 'Element', id: string, name: string, icon: string, description: string, completed: boolean, uri: string, labels: Array<string>, trips: Array<{ __typename?: 'Trip', id: string }>, location?: { __typename?: 'Location', id: string, address: string, latitude: number, longitude: number, placeId?: string | null } | null, photos: Array<{ __typename?: 'Photo', id: string, thumbnail: string, regular: string, description: string }>, schedule?: { __typename?: 'Schedule', id: string, allDay: boolean, startDate: any, endDate: any, startTime?: any | null, endTime?: any | null, startTz: string, endTz: string } | null } };
 
 
+export const CreatePhotoDocument = gql`
+    mutation CreatePhoto($input: PhotoInput!) {
+  createPhoto(input: $input) {
+    id
+    thumbnail
+    regular
+    description
+  }
+}
+    `;
+export type CreatePhotoMutationFn = Apollo.MutationFunction<CreatePhotoMutation, CreatePhotoMutationVariables>;
+
+/**
+ * __useCreatePhotoMutation__
+ *
+ * To run a mutation, you first call `useCreatePhotoMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useCreatePhotoMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [createPhotoMutation, { data, loading, error }] = useCreatePhotoMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useCreatePhotoMutation(baseOptions?: Apollo.MutationHookOptions<CreatePhotoMutation, CreatePhotoMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<CreatePhotoMutation, CreatePhotoMutationVariables>(CreatePhotoDocument, options);
+      }
+export type CreatePhotoMutationHookResult = ReturnType<typeof useCreatePhotoMutation>;
+export type CreatePhotoMutationResult = Apollo.MutationResult<CreatePhotoMutation>;
+export type CreatePhotoMutationOptions = Apollo.BaseMutationOptions<CreatePhotoMutation, CreatePhotoMutationVariables>;
+export const CreateUploadUrlDocument = gql`
+    query CreateUploadUrl($bustCache: Int) {
+  createUploadUrl(bustCache: $bustCache) {
+    url
+    key
+  }
+}
+    `;
+
+/**
+ * __useCreateUploadUrlQuery__
+ *
+ * To run a query within a React component, call `useCreateUploadUrlQuery` and pass it any options that fit your needs.
+ * When your component renders, `useCreateUploadUrlQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useCreateUploadUrlQuery({
+ *   variables: {
+ *      bustCache: // value for 'bustCache'
+ *   },
+ * });
+ */
+export function useCreateUploadUrlQuery(baseOptions?: Apollo.QueryHookOptions<CreateUploadUrlQuery, CreateUploadUrlQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<CreateUploadUrlQuery, CreateUploadUrlQueryVariables>(CreateUploadUrlDocument, options);
+      }
+export function useCreateUploadUrlLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<CreateUploadUrlQuery, CreateUploadUrlQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<CreateUploadUrlQuery, CreateUploadUrlQueryVariables>(CreateUploadUrlDocument, options);
+        }
+// @ts-ignore
+export function useCreateUploadUrlSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<CreateUploadUrlQuery, CreateUploadUrlQueryVariables>): Apollo.UseSuspenseQueryResult<CreateUploadUrlQuery, CreateUploadUrlQueryVariables>;
+export function useCreateUploadUrlSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<CreateUploadUrlQuery, CreateUploadUrlQueryVariables>): Apollo.UseSuspenseQueryResult<CreateUploadUrlQuery | undefined, CreateUploadUrlQueryVariables>;
+export function useCreateUploadUrlSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<CreateUploadUrlQuery, CreateUploadUrlQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<CreateUploadUrlQuery, CreateUploadUrlQueryVariables>(CreateUploadUrlDocument, options);
+        }
+export type CreateUploadUrlQueryHookResult = ReturnType<typeof useCreateUploadUrlQuery>;
+export type CreateUploadUrlLazyQueryHookResult = ReturnType<typeof useCreateUploadUrlLazyQuery>;
+export type CreateUploadUrlSuspenseQueryHookResult = ReturnType<typeof useCreateUploadUrlSuspenseQuery>;
+export type CreateUploadUrlQueryResult = Apollo.QueryResult<CreateUploadUrlQuery, CreateUploadUrlQueryVariables>;
 export const ElementDetailDocument = gql`
     query ElementDetail($id: String!) {
   element(id: $id) {
@@ -730,6 +833,8 @@ export const ElementsDocument = gql`
  *   variables: {
  *      bounds: // value for 'bounds'
  *      tripId: // value for 'tripId'
+ *      labels: // value for 'labels'
+ *      labelsMatch: // value for 'labelsMatch'
  *   },
  * });
  */
