@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import {useMemo, useState} from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -10,6 +10,8 @@ import {
   View,
 } from 'react-native';
 import {useLoginMutation} from '../graphql/__generated__/types';
+import type {Theme} from '../theme/colors';
+import {useTheme} from '../theme/useTheme';
 import {clearSecurityWarning, useSecurityWarning} from './authClient';
 import {tokenStore} from './tokenStore';
 
@@ -43,6 +45,8 @@ function messageForCode(code: string | undefined): string {
 }
 
 export function LoginScreen() {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -83,6 +87,7 @@ export function LoginScreen() {
         <TextInput
           style={styles.input}
           placeholder="Email"
+          placeholderTextColor={theme.textTertiary}
           autoCapitalize="none"
           autoCorrect={false}
           autoComplete="email"
@@ -94,6 +99,7 @@ export function LoginScreen() {
         <TextInput
           style={styles.input}
           placeholder="Password"
+          placeholderTextColor={theme.textTertiary}
           autoCapitalize="none"
           autoCorrect={false}
           autoComplete="password"
@@ -119,7 +125,7 @@ export function LoginScreen() {
             pressed && canSubmit && styles.buttonPressed,
           ]}>
           {loading ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color={theme.onAction} />
           ) : (
             <Text style={styles.buttonText}>Log in</Text>
           )}
@@ -129,51 +135,54 @@ export function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  flex: {flex: 1},
-  container: {
-    flex: 1,
-    padding: 24,
-    justifyContent: 'center',
-    gap: 12,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '600',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    fontSize: 16,
-  },
-  error: {
-    color: '#c00',
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  warning: {
-    color: '#a55',
-    fontSize: 13,
-    textAlign: 'center',
-    fontStyle: 'italic',
-  },
-  button: {
-    backgroundColor: '#0a7ea4',
-    borderRadius: 8,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  buttonDisabled: {opacity: 0.5},
-  buttonPressed: {opacity: 0.85},
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});
+const makeStyles = (theme: Theme) =>
+  StyleSheet.create({
+    flex: {flex: 1, backgroundColor: theme.background},
+    container: {
+      flex: 1,
+      padding: 24,
+      justifyContent: 'center',
+      gap: 12,
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: '600',
+      marginBottom: 16,
+      textAlign: 'center',
+      color: theme.textPrimary,
+    },
+    input: {
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 12,
+      fontSize: 16,
+      color: theme.textPrimary,
+    },
+    error: {
+      color: theme.error,
+      fontSize: 14,
+      textAlign: 'center',
+    },
+    warning: {
+      color: theme.error,
+      fontSize: 13,
+      textAlign: 'center',
+      fontStyle: 'italic',
+    },
+    button: {
+      backgroundColor: theme.action,
+      borderRadius: 8,
+      paddingVertical: 14,
+      alignItems: 'center',
+      marginTop: 8,
+    },
+    buttonDisabled: {opacity: 0.5},
+    buttonPressed: {opacity: 0.85},
+    buttonText: {
+      color: theme.onAction,
+      fontSize: 16,
+      fontWeight: '600',
+    },
+  });

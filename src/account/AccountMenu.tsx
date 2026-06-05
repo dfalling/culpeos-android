@@ -1,8 +1,10 @@
-import {useState} from 'react';
+import {useMemo, useState} from 'react';
 import {Pressable, StyleSheet, Text} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {logout} from '../auth/authClient';
 import {useAuth} from '../auth/tokenStore';
+import type {Theme} from '../theme/colors';
+import {useTheme} from '../theme/useTheme';
 import {Sheet} from '../ui/Sheet';
 
 /**
@@ -10,6 +12,8 @@ import {Sheet} from '../ui/Sheet';
  * than as a root-level sibling) so pushed detail screens cover it.
  */
 export function AccountMenu() {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const safeAreaInsets = useSafeAreaInsets();
   const [open, setOpen] = useState(false);
   const auth = useAuth();
@@ -57,44 +61,45 @@ export function AccountMenu() {
   );
 }
 
-const styles = StyleSheet.create({
-  avatarButton: {
-    position: 'absolute',
-    right: 16,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#1d6fe0',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    shadowOffset: {width: 0, height: 2},
-    elevation: 4,
-  },
-  avatarPressed: {opacity: 0.8},
-  avatarText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  sheetEmail: {
-    fontSize: 12,
-    color: '#666',
-    paddingHorizontal: 12,
-    paddingBottom: 8,
-  },
-  sheetItem: {
-    paddingHorizontal: 12,
-    paddingVertical: 14,
-    borderRadius: 8,
-  },
-  sheetItemPressed: {
-    backgroundColor: '#f2f2f2',
-  },
-  sheetItemText: {
-    fontSize: 16,
-    color: '#222',
-  },
-});
+const makeStyles = (theme: Theme) =>
+  StyleSheet.create({
+    avatarButton: {
+      position: 'absolute',
+      right: 16,
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: theme.accent,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: '#000',
+      shadowOpacity: 0.2,
+      shadowRadius: 4,
+      shadowOffset: {width: 0, height: 2},
+      elevation: 4,
+    },
+    avatarPressed: {opacity: 0.8},
+    avatarText: {
+      color: '#ffffff',
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    sheetEmail: {
+      fontSize: 12,
+      color: theme.textSecondary,
+      paddingHorizontal: 12,
+      paddingBottom: 8,
+    },
+    sheetItem: {
+      paddingHorizontal: 12,
+      paddingVertical: 14,
+      borderRadius: 8,
+    },
+    sheetItemPressed: {
+      backgroundColor: theme.surfaceMuted,
+    },
+    sheetItemText: {
+      fontSize: 16,
+      color: theme.textPrimary,
+    },
+  });

@@ -1,4 +1,4 @@
-import {useCallback, useRef, useState} from 'react';
+import {useCallback, useMemo, useRef, useState} from 'react';
 import {
   ActivityIndicator,
   Keyboard,
@@ -13,6 +13,8 @@ import {
   type SearchQuery,
   useSearchLazyQuery,
 } from '../graphql/__generated__/types';
+import type {Theme} from '../theme/colors';
+import {useTheme} from '../theme/useTheme';
 
 export type SearchElement = SearchQuery['elements'][number];
 export type SearchTrip = SearchQuery['trips'][number];
@@ -38,6 +40,8 @@ export function SearchOverlay({
   onSelectTrip,
   onSelectPlace,
 }: Props) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const [expanded, setExpanded] = useState(false);
   const [text, setText] = useState('');
   const [submitted, setSubmitted] = useState(false);
@@ -114,7 +118,7 @@ export function SearchOverlay({
             onChangeText={setText}
             onSubmitEditing={submit}
             placeholder="Search elements, trips, places"
-            placeholderTextColor="#999"
+            placeholderTextColor={theme.textTertiary}
             returnKeyType="search"
             style={styles.input}
           />
@@ -217,6 +221,8 @@ function Section({
   title: string;
   children: React.ReactNode;
 }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>{title}</Text>
@@ -242,6 +248,8 @@ function ResultRow({
   accessibilityLabel: string;
   onPress: () => void;
 }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <Pressable
       accessibilityRole="button"
@@ -270,163 +278,164 @@ function ResultRow({
   );
 }
 
-const styles = StyleSheet.create({
-  iconButton: {
-    position: 'absolute',
-    left: 16,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#ffffff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    shadowOffset: {width: 0, height: 2},
-    elevation: 4,
-  },
-  pressed: {opacity: 0.8},
-  searchGlyph: {
-    fontSize: 22,
-    lineHeight: 26,
-    color: '#1d6fe0',
-  },
-  expandedRoot: {
-    position: 'absolute',
-    left: 16,
-    // Leave room for the account avatar pinned at the top-right.
-    right: 64,
-  },
-  fieldRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: 22,
-    paddingLeft: 14,
-    paddingRight: 6,
-    height: 44,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    shadowOffset: {width: 0, height: 2},
-    elevation: 4,
-  },
-  fieldGlyph: {
-    fontSize: 20,
-    lineHeight: 24,
-    color: '#888',
-    marginRight: 8,
-  },
-  input: {
-    flex: 1,
-    fontSize: 15,
-    color: '#111',
-    padding: 0,
-  },
-  fieldClose: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#f1f1f1',
-  },
-  fieldCloseIcon: {
-    fontSize: 18,
-    lineHeight: 20,
-    color: '#444',
-  },
-  resultsCard: {
-    marginTop: 8,
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    shadowOffset: {width: 0, height: 2},
-    elevation: 6,
-    overflow: 'hidden',
-  },
-  resultsScroll: {
-    maxHeight: 360,
-  },
-  statusPane: {
-    paddingVertical: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyText: {
-    fontSize: 14,
-    color: '#888',
-  },
-  section: {
-    paddingTop: 10,
-    paddingBottom: 4,
-  },
-  sectionTitle: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#888',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    paddingHorizontal: 14,
-    marginBottom: 4,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  rowPressed: {
-    backgroundColor: '#f4f7fc',
-  },
-  glyphWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  elementGlyphWrap: {
-    backgroundColor: '#1d6fe0',
-  },
-  tripGlyphWrap: {
-    backgroundColor: '#7a3ff2',
-  },
-  placeGlyphWrap: {
-    backgroundColor: '#e9eef6',
-  },
-  glyph: {
-    fontSize: 18,
-    lineHeight: 22,
-    textAlign: 'center',
-  },
-  rowBody: {
-    flex: 1,
-    marginRight: 8,
-  },
-  rowTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#111',
-  },
-  rowSubtitle: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 2,
-  },
-  badge: {
-    backgroundColor: '#efe9fd',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
-  },
-  badgeText: {
-    color: '#7a3ff2',
-    fontSize: 11,
-    fontWeight: '600',
-  },
-});
+const makeStyles = (theme: Theme) =>
+  StyleSheet.create({
+    iconButton: {
+      position: 'absolute',
+      left: 16,
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: theme.card,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: '#000',
+      shadowOpacity: 0.2,
+      shadowRadius: 4,
+      shadowOffset: {width: 0, height: 2},
+      elevation: 4,
+    },
+    pressed: {opacity: 0.8},
+    searchGlyph: {
+      fontSize: 22,
+      lineHeight: 26,
+      color: theme.accent,
+    },
+    expandedRoot: {
+      position: 'absolute',
+      left: 16,
+      // Leave room for the account avatar pinned at the top-right.
+      right: 64,
+    },
+    fieldRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: theme.card,
+      borderRadius: 22,
+      paddingLeft: 14,
+      paddingRight: 6,
+      height: 44,
+      shadowColor: '#000',
+      shadowOpacity: 0.2,
+      shadowRadius: 4,
+      shadowOffset: {width: 0, height: 2},
+      elevation: 4,
+    },
+    fieldGlyph: {
+      fontSize: 20,
+      lineHeight: 24,
+      color: theme.textTertiary,
+      marginRight: 8,
+    },
+    input: {
+      flex: 1,
+      fontSize: 15,
+      color: theme.textPrimary,
+      padding: 0,
+    },
+    fieldClose: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: theme.surfaceMuted,
+    },
+    fieldCloseIcon: {
+      fontSize: 18,
+      lineHeight: 20,
+      color: theme.textSecondary,
+    },
+    resultsCard: {
+      marginTop: 8,
+      backgroundColor: theme.card,
+      borderRadius: 12,
+      shadowColor: '#000',
+      shadowOpacity: 0.15,
+      shadowRadius: 8,
+      shadowOffset: {width: 0, height: 2},
+      elevation: 6,
+      overflow: 'hidden',
+    },
+    resultsScroll: {
+      maxHeight: 360,
+    },
+    statusPane: {
+      paddingVertical: 24,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    emptyText: {
+      fontSize: 14,
+      color: theme.textTertiary,
+    },
+    section: {
+      paddingTop: 10,
+      paddingBottom: 4,
+    },
+    sectionTitle: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: theme.textTertiary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+      paddingHorizontal: 14,
+      marginBottom: 4,
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+    },
+    rowPressed: {
+      backgroundColor: theme.surfaceMuted,
+    },
+    glyphWrap: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 12,
+    },
+    elementGlyphWrap: {
+      backgroundColor: theme.accent,
+    },
+    tripGlyphWrap: {
+      backgroundColor: theme.trip,
+    },
+    placeGlyphWrap: {
+      backgroundColor: theme.surfaceMuted,
+    },
+    glyph: {
+      fontSize: 18,
+      lineHeight: 22,
+      textAlign: 'center',
+    },
+    rowBody: {
+      flex: 1,
+      marginRight: 8,
+    },
+    rowTitle: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: theme.textPrimary,
+    },
+    rowSubtitle: {
+      fontSize: 12,
+      color: theme.textSecondary,
+      marginTop: 2,
+    },
+    badge: {
+      backgroundColor: theme.tripMuted,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 10,
+    },
+    badgeText: {
+      color: theme.trip,
+      fontSize: 11,
+      fontWeight: '600',
+    },
+  });

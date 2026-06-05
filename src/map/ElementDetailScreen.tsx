@@ -1,4 +1,5 @@
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {useMemo} from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -14,6 +15,8 @@ import {
   useElementDetailQuery,
 } from '../graphql/__generated__/types';
 import type {RootStackParamList} from '../navigation/types';
+import type {Theme} from '../theme/colors';
+import {useTheme} from '../theme/useTheme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ElementDetail'>;
 
@@ -21,6 +24,8 @@ type ElementDetail = ElementDetailQuery['element'];
 
 export function ElementDetailScreen({route, navigation}: Props) {
   const {elementId} = route.params;
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const {data, loading} = useElementDetailQuery({variables: {id: elementId}});
 
   return (
@@ -54,6 +59,8 @@ function ModalContents({
   onEdit: () => void;
   onSelectLabel: (label: string) => void;
 }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const safeAreaInsets = useSafeAreaInsets();
 
   return (
@@ -172,6 +179,8 @@ function Section({
   title: string;
   children: React.ReactNode;
 }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>{title}</Text>
@@ -191,147 +200,148 @@ function formatSchedule(schedule: NonNullable<ElementDetail['schedule']>) {
   return `${range} · ${time}`;
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#ddd',
-  },
-  closeButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#f1f1f1',
-    marginRight: 12,
-  },
-  closeIcon: {
-    fontSize: 20,
-    lineHeight: 22,
-    color: '#222',
-  },
-  headerTitle: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#111',
-  },
-  editButton: {
-    marginLeft: 12,
-    paddingHorizontal: 4,
-  },
-  editButtonText: {
-    fontSize: 16,
-    color: '#0a7ea4',
-    fontWeight: '600',
-  },
-  scrollContent: {
-    padding: 16,
-  },
-  hero: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  iconWrap: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#1d6fe0',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 14,
-  },
-  icon: {
-    fontSize: 28,
-    lineHeight: 32,
-    textAlign: 'center',
-  },
-  heroBody: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#111',
-  },
-  subtitle: {
-    fontSize: 13,
-    color: '#666',
-    marginTop: 4,
-  },
-  completedTag: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#e6f4ea',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
-    marginTop: 8,
-  },
-  completedTagText: {
-    color: '#1e8e3e',
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  photoStrip: {
-    paddingVertical: 16,
-    gap: 8,
-  },
-  photo: {
-    width: 200,
-    height: 140,
-    borderRadius: 10,
-    backgroundColor: '#eee',
-  },
-  section: {
-    marginTop: 20,
-  },
-  sectionTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#888',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 6,
-  },
-  body: {
-    fontSize: 15,
-    lineHeight: 21,
-    color: '#222',
-  },
-  labelRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  labelChip: {
-    backgroundColor: '#eef3fb',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
-  },
-  labelChipPressed: {
-    backgroundColor: '#dde7f7',
-  },
-  labelChipText: {
-    color: '#1d6fe0',
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  loadingPane: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+const makeStyles = (theme: Theme) =>
+  StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: theme.background,
+    },
+    container: {
+      flex: 1,
+      backgroundColor: theme.background,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingBottom: 12,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: theme.border,
+    },
+    closeButton: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: theme.surfaceMuted,
+      marginRight: 12,
+    },
+    closeIcon: {
+      fontSize: 20,
+      lineHeight: 22,
+      color: theme.textPrimary,
+    },
+    headerTitle: {
+      flex: 1,
+      fontSize: 16,
+      fontWeight: '600',
+      color: theme.textPrimary,
+    },
+    editButton: {
+      marginLeft: 12,
+      paddingHorizontal: 4,
+    },
+    editButtonText: {
+      fontSize: 16,
+      color: theme.action,
+      fontWeight: '600',
+    },
+    scrollContent: {
+      padding: 16,
+    },
+    hero: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    iconWrap: {
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      backgroundColor: theme.accent,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 14,
+    },
+    icon: {
+      fontSize: 28,
+      lineHeight: 32,
+      textAlign: 'center',
+    },
+    heroBody: {
+      flex: 1,
+    },
+    title: {
+      fontSize: 22,
+      fontWeight: '700',
+      color: theme.textPrimary,
+    },
+    subtitle: {
+      fontSize: 13,
+      color: theme.textSecondary,
+      marginTop: 4,
+    },
+    completedTag: {
+      alignSelf: 'flex-start',
+      backgroundColor: theme.successMuted,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 10,
+      marginTop: 8,
+    },
+    completedTagText: {
+      color: theme.success,
+      fontSize: 11,
+      fontWeight: '600',
+    },
+    photoStrip: {
+      paddingVertical: 16,
+      gap: 8,
+    },
+    photo: {
+      width: 200,
+      height: 140,
+      borderRadius: 10,
+      backgroundColor: theme.surfaceMuted,
+    },
+    section: {
+      marginTop: 20,
+    },
+    sectionTitle: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: theme.textTertiary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+      marginBottom: 6,
+    },
+    body: {
+      fontSize: 15,
+      lineHeight: 21,
+      color: theme.textPrimary,
+    },
+    labelRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 6,
+    },
+    labelChip: {
+      backgroundColor: theme.accentMuted,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: 12,
+    },
+    labelChipPressed: {
+      backgroundColor: theme.border,
+    },
+    labelChipText: {
+      color: theme.accent,
+      fontSize: 12,
+      fontWeight: '500',
+    },
+    loadingPane: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+  });

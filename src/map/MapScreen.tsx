@@ -28,6 +28,8 @@ import type {
   RootStackNavigation,
   RootStackParamList,
 } from '../navigation/types';
+import type {Theme} from '../theme/colors';
+import {useTheme} from '../theme/useTheme';
 import {ElementPreviewCard} from './ElementPreviewCard';
 import {FilterChips} from './FilterChips';
 import {zoomForPlaceTypes} from './placeZoom';
@@ -41,7 +43,6 @@ import {type Viewport, viewportStore} from './viewportStore';
 
 type ElementWithLocation = ElementsQuery['elements'][number];
 
-const MAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
 const USER_ZOOM = 14;
 // Zoom used when flying to a searched element, and for single-element trips
 // where there is no extent to fit.
@@ -59,6 +60,8 @@ const OFF_CENTER_THRESHOLD = 0.2;
 const BOTTOM_MARGIN = 16;
 
 export function MapScreen() {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const navigation = useNavigation<RootStackNavigation>();
   const route = useRoute<RouteProp<RootStackParamList, 'Map'>>();
   const cameraRef = useRef<CameraRef>(null);
@@ -366,7 +369,7 @@ export function MapScreen() {
   return (
     <View style={styles.container}>
       <MapLibreMap
-        mapStyle={MAP_STYLE}
+        mapStyle={theme.mapStyleUrl}
         style={styles.map}
         onPress={() => setSelectedElementId(null)}
         onRegionDidChange={onRegionDidChange}>
@@ -438,50 +441,52 @@ export function MapScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  map: {
-    flex: 1,
-  },
-  pin: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#1d6fe0',
-    borderWidth: 2,
-    borderColor: '#ffffff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pinSelected: {
-    backgroundColor: '#0b4ea2',
-    transform: [{scale: 1.15}],
-  },
-  pinIcon: {
-    fontSize: 18,
-    lineHeight: 22,
-    textAlign: 'center',
-  },
-  recenterButton: {
-    position: 'absolute',
-    right: 16,
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#ffffff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    shadowOffset: {width: 0, height: 2},
-    elevation: 4,
-  },
-  recenterIcon: {
-    fontSize: 24,
-    lineHeight: 28,
-    color: '#1d6fe0',
-  },
-});
+const makeStyles = (theme: Theme) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.background,
+    },
+    map: {
+      flex: 1,
+    },
+    pin: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: theme.pin,
+      borderWidth: 2,
+      borderColor: theme.pinBorder,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    pinSelected: {
+      backgroundColor: theme.pinSelected,
+      transform: [{scale: 1.15}],
+    },
+    pinIcon: {
+      fontSize: 18,
+      lineHeight: 22,
+      textAlign: 'center',
+    },
+    recenterButton: {
+      position: 'absolute',
+      right: 16,
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: theme.mapButtonBg,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: '#000',
+      shadowOpacity: 0.2,
+      shadowRadius: 4,
+      shadowOffset: {width: 0, height: 2},
+      elevation: 4,
+    },
+    recenterIcon: {
+      fontSize: 24,
+      lineHeight: 28,
+      color: theme.mapButtonIcon,
+    },
+  });
