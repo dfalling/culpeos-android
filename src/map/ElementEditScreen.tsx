@@ -1,5 +1,5 @@
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {useState} from 'react';
+import {useMemo, useState} from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -23,6 +23,8 @@ import {
 } from '../graphql/__generated__/types';
 import type {RootStackParamList} from '../navigation/types';
 import {usePhotoUploader} from '../photos/photoUpload';
+import type {Theme} from '../theme/colors';
+import {useTheme} from '../theme/useTheme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ElementEdit'>;
 
@@ -38,6 +40,8 @@ function isValidUrl(value: string): boolean {
 
 export function ElementEditScreen({route, navigation}: Props) {
   const {elementId} = route.params;
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const {data, loading} = useElementDetailQuery({variables: {id: elementId}});
   const element = data?.element;
 
@@ -61,6 +65,8 @@ export function ElementEditScreen({route, navigation}: Props) {
  * labels, trips) — so saving an edit doesn't clear them.
  */
 function EditForm({element, onDone}: {element: Element; onDone: () => void}) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const safeAreaInsets = useSafeAreaInsets();
   const [name, setName] = useState(element.name);
   const [uri, setUri] = useState(element.uri);
@@ -302,6 +308,8 @@ function EditForm({element, onDone}: {element: Element; onDone: () => void}) {
 }
 
 function Field({label, children}: {label: string; children: React.ReactNode}) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <View style={styles.field}>
       <Text style={styles.fieldLabel}>{label}</Text>
@@ -310,143 +318,146 @@ function Field({label, children}: {label: string; children: React.ReactNode}) {
   );
 }
 
-const styles = StyleSheet.create({
-  flex: {flex: 1},
-  screen: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-  },
-  loadingPane: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#ddd',
-  },
-  headerButton: {
-    minWidth: 56,
-    justifyContent: 'center',
-  },
-  headerButtonText: {
-    fontSize: 16,
-    color: '#222',
-  },
-  headerTitle: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#111',
-    textAlign: 'center',
-  },
-  saveText: {
-    color: '#0a7ea4',
-    fontWeight: '600',
-    textAlign: 'right',
-  },
-  saveTextDisabled: {
-    opacity: 0.4,
-  },
-  scrollContent: {
-    padding: 16,
-    gap: 20,
-  },
-  field: {
-    gap: 6,
-  },
-  fieldLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#888',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: '#111',
-  },
-  iconButton: {
-    width: 64,
-    height: 64,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconButtonValue: {
-    fontSize: 32,
-  },
-  iconButtonPlaceholder: {
-    fontSize: 28,
-    color: '#aaa',
-  },
-  multiline: {
-    minHeight: 120,
-  },
-  photoGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  photoThumbWrap: {
-    width: 80,
-    height: 80,
-  },
-  photoThumb: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
-    backgroundColor: '#eee',
-  },
-  photoRemove: {
-    position: 'absolute',
-    top: -6,
-    right: -6,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: '#222',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  photoRemoveIcon: {
-    color: '#fff',
-    fontSize: 16,
-    lineHeight: 18,
-    fontWeight: '600',
-  },
-  photoAdd: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderStyle: 'dashed',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  photoAddIcon: {
-    fontSize: 28,
-    color: '#aaa',
-  },
-  switchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  error: {
-    color: '#c00',
-    fontSize: 14,
-  },
-});
+const makeStyles = (theme: Theme) =>
+  StyleSheet.create({
+    flex: {flex: 1},
+    screen: {
+      flex: 1,
+      backgroundColor: theme.background,
+    },
+    loadingPane: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingBottom: 12,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: theme.border,
+    },
+    headerButton: {
+      minWidth: 56,
+      justifyContent: 'center',
+    },
+    headerButtonText: {
+      fontSize: 16,
+      color: theme.textPrimary,
+    },
+    headerTitle: {
+      flex: 1,
+      fontSize: 16,
+      fontWeight: '600',
+      color: theme.textPrimary,
+      textAlign: 'center',
+    },
+    saveText: {
+      color: theme.action,
+      fontWeight: '600',
+      textAlign: 'right',
+    },
+    saveTextDisabled: {
+      opacity: 0.4,
+    },
+    scrollContent: {
+      padding: 16,
+      gap: 20,
+    },
+    field: {
+      gap: 6,
+    },
+    fieldLabel: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: theme.textTertiary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    input: {
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 12,
+      fontSize: 16,
+      color: theme.textPrimary,
+    },
+    iconButton: {
+      width: 64,
+      height: 64,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: theme.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    iconButtonValue: {
+      fontSize: 32,
+    },
+    iconButtonPlaceholder: {
+      fontSize: 28,
+      color: theme.textTertiary,
+    },
+    multiline: {
+      minHeight: 120,
+    },
+    photoGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 10,
+    },
+    photoThumbWrap: {
+      width: 80,
+      height: 80,
+    },
+    photoThumb: {
+      width: 80,
+      height: 80,
+      borderRadius: 8,
+      backgroundColor: theme.surfaceMuted,
+    },
+    photoRemove: {
+      position: 'absolute',
+      top: -6,
+      right: -6,
+      width: 22,
+      height: 22,
+      borderRadius: 11,
+      // Inverts against the screen so the badge reads on any photo in either
+      // appearance: a dark chip in light mode, a light chip in dark mode.
+      backgroundColor: theme.textPrimary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    photoRemoveIcon: {
+      color: theme.background,
+      fontSize: 16,
+      lineHeight: 18,
+      fontWeight: '600',
+    },
+    photoAdd: {
+      width: 80,
+      height: 80,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderStyle: 'dashed',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    photoAddIcon: {
+      fontSize: 28,
+      color: theme.textTertiary,
+    },
+    switchRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    error: {
+      color: theme.error,
+      fontSize: 14,
+    },
+  });

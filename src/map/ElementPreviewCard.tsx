@@ -1,5 +1,8 @@
+import {useMemo} from 'react';
 import {Pressable, StyleSheet, Text, View} from 'react-native';
 import {useElementDetailQuery} from '../graphql/__generated__/types';
+import type {Theme} from '../theme/colors';
+import {useTheme} from '../theme/useTheme';
 
 type Props = {
   elementId: string;
@@ -14,6 +17,8 @@ export function ElementPreviewCard({
   onClose,
   onExpand,
 }: Props) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const {data, loading} = useElementDetailQuery({variables: {id: elementId}});
   const element = data?.element;
 
@@ -55,66 +60,67 @@ export function ElementPreviewCard({
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    position: 'absolute',
-    left: 12,
-    right: 12,
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    shadowOffset: {width: 0, height: 2},
-    elevation: 6,
-  },
-  iconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#1d6fe0',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  icon: {
-    fontSize: 22,
-    lineHeight: 26,
-    textAlign: 'center',
-  },
-  body: {
-    flex: 1,
-    marginRight: 8,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#111',
-  },
-  subtitle: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 2,
-  },
-  description: {
-    fontSize: 13,
-    color: '#444',
-    marginTop: 4,
-  },
-  closeButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#f1f1f1',
-  },
-  closeIcon: {
-    fontSize: 20,
-    lineHeight: 22,
-    color: '#444',
-  },
-});
+const makeStyles = (theme: Theme) =>
+  StyleSheet.create({
+    card: {
+      position: 'absolute',
+      left: 12,
+      right: 12,
+      backgroundColor: theme.card,
+      borderRadius: 12,
+      padding: 12,
+      flexDirection: 'row',
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOpacity: 0.15,
+      shadowRadius: 8,
+      shadowOffset: {width: 0, height: 2},
+      elevation: 6,
+    },
+    iconWrap: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: theme.accent,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 12,
+    },
+    icon: {
+      fontSize: 22,
+      lineHeight: 26,
+      textAlign: 'center',
+    },
+    body: {
+      flex: 1,
+      marginRight: 8,
+    },
+    title: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: theme.textPrimary,
+    },
+    subtitle: {
+      fontSize: 12,
+      color: theme.textSecondary,
+      marginTop: 2,
+    },
+    description: {
+      fontSize: 13,
+      color: theme.textSecondary,
+      marginTop: 4,
+    },
+    closeButton: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: theme.surfaceMuted,
+    },
+    closeIcon: {
+      fontSize: 20,
+      lineHeight: 22,
+      color: theme.textSecondary,
+    },
+  });
