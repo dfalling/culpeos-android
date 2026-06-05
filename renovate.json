@@ -3,6 +3,12 @@
   "extends": ["config:recommended"],
   "packageRules": [
     {
+      "description": "Pin Gradle to <9.4. React Native 0.85.3's bundled gradle-plugin (node_modules/@react-native/gradle-plugin) is compiled with Kotlin 2.1.20, whose compiler can only read Kotlin metadata up to 2.3. Gradle >=9.4 bundles a Kotlin 2.3.x stdlib (metadata 2.3.0) that leaks onto the settings-plugin compile classpath, so the build fails compiling the RN plugin (`Module was compiled with an incompatible version of Kotlin`). 9.3.1 (Kotlin 2.2.21) is the highest working version. Raise this ceiling once React Native ships a gradle-plugin built with Kotlin >=2.3.",
+      "matchPackageNames": ["gradle"],
+      "matchManagers": ["gradle-wrapper"],
+      "allowedVersions": "<9.4.0"
+    },
+    {
       "description": "Group the React Native core and its tooling — they are pinned to the same release and must bump atomically",
       "matchPackageNames": [
         "react-native",
