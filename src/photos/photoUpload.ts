@@ -1,4 +1,4 @@
-import {useApolloClient} from '@apollo/client';
+import {useApolloClient} from '@apollo/client/react';
 import ImageResizer from '@bam.tech/react-native-image-resizer';
 import {useCallback, useState} from 'react';
 import {launchImageLibrary} from 'react-native-image-picker';
@@ -137,6 +137,7 @@ export function usePhotoUploader(): {
         CreateUploadUrlQuery,
         CreateUploadUrlQueryVariables
       >({query: CreateUploadUrlDocument, fetchPolicy: 'no-cache'});
+      if (!urlData) throw new Error('Failed to get a photo upload URL');
       const {url, key} = urlData.createUploadUrl;
 
       // Step 2: upload the bytes to S3.
