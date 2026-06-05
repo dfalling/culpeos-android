@@ -1,5 +1,5 @@
 import { gql } from '@apollo/client';
-import * as Apollo from '@apollo/client';
+import * as Apollo from '@apollo/client/react';
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
 export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
@@ -657,7 +657,7 @@ export const CreatePhotoDocument = gql`
   }
 }
     `;
-export type CreatePhotoMutationFn = Apollo.MutationFunction<CreatePhotoMutation, CreatePhotoMutationVariables>;
+export type CreatePhotoMutationFn = Apollo.useMutation.MutationFunction<CreatePhotoMutation, CreatePhotoMutationVariables>;
 
 /**
  * __useCreatePhotoMutation__
@@ -682,7 +682,7 @@ export function useCreatePhotoMutation(baseOptions?: Apollo.MutationHookOptions<
       }
 export type CreatePhotoMutationHookResult = ReturnType<typeof useCreatePhotoMutation>;
 export type CreatePhotoMutationResult = Apollo.MutationResult<CreatePhotoMutation>;
-export type CreatePhotoMutationOptions = Apollo.BaseMutationOptions<CreatePhotoMutation, CreatePhotoMutationVariables>;
+export type CreatePhotoMutationOptions = Apollo.MutationHookOptions<CreatePhotoMutation, CreatePhotoMutationVariables>;
 export const CreateUploadUrlDocument = gql`
     query CreateUploadUrl($bustCache: Int) {
   createUploadUrl(bustCache: $bustCache) {
@@ -718,9 +718,11 @@ export function useCreateUploadUrlLazyQuery(baseOptions?: Apollo.LazyQueryHookOp
         }
 // @ts-ignore
 export function useCreateUploadUrlSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<CreateUploadUrlQuery, CreateUploadUrlQueryVariables>): Apollo.UseSuspenseQueryResult<CreateUploadUrlQuery, CreateUploadUrlQueryVariables>;
+// @ts-ignore typescript-react-apollo (v3 plugin) emits suspense hooks incompatible with Apollo Client v4 option/result types; these hooks are unused.
 export function useCreateUploadUrlSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<CreateUploadUrlQuery, CreateUploadUrlQueryVariables>): Apollo.UseSuspenseQueryResult<CreateUploadUrlQuery | undefined, CreateUploadUrlQueryVariables>;
 export function useCreateUploadUrlSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<CreateUploadUrlQuery, CreateUploadUrlQueryVariables>) {
           const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          // @ts-ignore typescript-react-apollo (v3 plugin) emits suspense hooks incompatible with Apollo Client v4 option/result types; these hooks are unused.
           return Apollo.useSuspenseQuery<CreateUploadUrlQuery, CreateUploadUrlQueryVariables>(CreateUploadUrlDocument, options);
         }
 export type CreateUploadUrlQueryHookResult = ReturnType<typeof useCreateUploadUrlQuery>;
@@ -793,9 +795,11 @@ export function useElementDetailLazyQuery(baseOptions?: Apollo.LazyQueryHookOpti
         }
 // @ts-ignore
 export function useElementDetailSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<ElementDetailQuery, ElementDetailQueryVariables>): Apollo.UseSuspenseQueryResult<ElementDetailQuery, ElementDetailQueryVariables>;
+// @ts-ignore typescript-react-apollo (v3 plugin) emits suspense hooks incompatible with Apollo Client v4 option/result types; these hooks are unused.
 export function useElementDetailSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ElementDetailQuery, ElementDetailQueryVariables>): Apollo.UseSuspenseQueryResult<ElementDetailQuery | undefined, ElementDetailQueryVariables>;
 export function useElementDetailSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ElementDetailQuery, ElementDetailQueryVariables>) {
           const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          // @ts-ignore typescript-react-apollo (v3 plugin) emits suspense hooks incompatible with Apollo Client v4 option/result types; these hooks are unused.
           return Apollo.useSuspenseQuery<ElementDetailQuery, ElementDetailQueryVariables>(ElementDetailDocument, options);
         }
 export type ElementDetailQueryHookResult = ReturnType<typeof useElementDetailQuery>;
@@ -852,9 +856,11 @@ export function useElementsLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<E
         }
 // @ts-ignore
 export function useElementsSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<ElementsQuery, ElementsQueryVariables>): Apollo.UseSuspenseQueryResult<ElementsQuery, ElementsQueryVariables>;
+// @ts-ignore typescript-react-apollo (v3 plugin) emits suspense hooks incompatible with Apollo Client v4 option/result types; these hooks are unused.
 export function useElementsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ElementsQuery, ElementsQueryVariables>): Apollo.UseSuspenseQueryResult<ElementsQuery | undefined, ElementsQueryVariables>;
 export function useElementsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ElementsQuery, ElementsQueryVariables>) {
           const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          // @ts-ignore typescript-react-apollo (v3 plugin) emits suspense hooks incompatible with Apollo Client v4 option/result types; these hooks are unused.
           return Apollo.useSuspenseQuery<ElementsQuery, ElementsQueryVariables>(ElementsDocument, options);
         }
 export type ElementsQueryHookResult = ReturnType<typeof useElementsQuery>;
@@ -875,7 +881,7 @@ export const LoginDocument = gql`
   }
 }
     `;
-export type LoginMutationFn = Apollo.MutationFunction<LoginMutation, LoginMutationVariables>;
+export type LoginMutationFn = Apollo.useMutation.MutationFunction<LoginMutation, LoginMutationVariables>;
 
 /**
  * __useLoginMutation__
@@ -900,7 +906,7 @@ export function useLoginMutation(baseOptions?: Apollo.MutationHookOptions<LoginM
       }
 export type LoginMutationHookResult = ReturnType<typeof useLoginMutation>;
 export type LoginMutationResult = Apollo.MutationResult<LoginMutation>;
-export type LoginMutationOptions = Apollo.BaseMutationOptions<LoginMutation, LoginMutationVariables>;
+export type LoginMutationOptions = Apollo.MutationHookOptions<LoginMutation, LoginMutationVariables>;
 export const LogoutDocument = gql`
     mutation Logout($input: LogoutInput!) {
   logout(input: $input) {
@@ -908,7 +914,7 @@ export const LogoutDocument = gql`
   }
 }
     `;
-export type LogoutMutationFn = Apollo.MutationFunction<LogoutMutation, LogoutMutationVariables>;
+export type LogoutMutationFn = Apollo.useMutation.MutationFunction<LogoutMutation, LogoutMutationVariables>;
 
 /**
  * __useLogoutMutation__
@@ -933,7 +939,7 @@ export function useLogoutMutation(baseOptions?: Apollo.MutationHookOptions<Logou
       }
 export type LogoutMutationHookResult = ReturnType<typeof useLogoutMutation>;
 export type LogoutMutationResult = Apollo.MutationResult<LogoutMutation>;
-export type LogoutMutationOptions = Apollo.BaseMutationOptions<LogoutMutation, LogoutMutationVariables>;
+export type LogoutMutationOptions = Apollo.MutationHookOptions<LogoutMutation, LogoutMutationVariables>;
 export const RenewTokenDocument = gql`
     mutation RenewToken($input: RenewTokenInput!) {
   renewToken(input: $input) {
@@ -948,7 +954,7 @@ export const RenewTokenDocument = gql`
   }
 }
     `;
-export type RenewTokenMutationFn = Apollo.MutationFunction<RenewTokenMutation, RenewTokenMutationVariables>;
+export type RenewTokenMutationFn = Apollo.useMutation.MutationFunction<RenewTokenMutation, RenewTokenMutationVariables>;
 
 /**
  * __useRenewTokenMutation__
@@ -973,7 +979,7 @@ export function useRenewTokenMutation(baseOptions?: Apollo.MutationHookOptions<R
       }
 export type RenewTokenMutationHookResult = ReturnType<typeof useRenewTokenMutation>;
 export type RenewTokenMutationResult = Apollo.MutationResult<RenewTokenMutation>;
-export type RenewTokenMutationOptions = Apollo.BaseMutationOptions<RenewTokenMutation, RenewTokenMutationVariables>;
+export type RenewTokenMutationOptions = Apollo.MutationHookOptions<RenewTokenMutation, RenewTokenMutationVariables>;
 export const SearchDocument = gql`
     query Search($query: String!) {
   elements(search: $query) {
@@ -1031,9 +1037,11 @@ export function useSearchLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<Sea
         }
 // @ts-ignore
 export function useSearchSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<SearchQuery, SearchQueryVariables>): Apollo.UseSuspenseQueryResult<SearchQuery, SearchQueryVariables>;
+// @ts-ignore typescript-react-apollo (v3 plugin) emits suspense hooks incompatible with Apollo Client v4 option/result types; these hooks are unused.
 export function useSearchSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<SearchQuery, SearchQueryVariables>): Apollo.UseSuspenseQueryResult<SearchQuery | undefined, SearchQueryVariables>;
 export function useSearchSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<SearchQuery, SearchQueryVariables>) {
           const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          // @ts-ignore typescript-react-apollo (v3 plugin) emits suspense hooks incompatible with Apollo Client v4 option/result types; these hooks are unused.
           return Apollo.useSuspenseQuery<SearchQuery, SearchQueryVariables>(SearchDocument, options);
         }
 export type SearchQueryHookResult = ReturnType<typeof useSearchQuery>;
@@ -1079,7 +1087,7 @@ export const UpdateElementDocument = gql`
   }
 }
     `;
-export type UpdateElementMutationFn = Apollo.MutationFunction<UpdateElementMutation, UpdateElementMutationVariables>;
+export type UpdateElementMutationFn = Apollo.useMutation.MutationFunction<UpdateElementMutation, UpdateElementMutationVariables>;
 
 /**
  * __useUpdateElementMutation__
@@ -1104,4 +1112,4 @@ export function useUpdateElementMutation(baseOptions?: Apollo.MutationHookOption
       }
 export type UpdateElementMutationHookResult = ReturnType<typeof useUpdateElementMutation>;
 export type UpdateElementMutationResult = Apollo.MutationResult<UpdateElementMutation>;
-export type UpdateElementMutationOptions = Apollo.BaseMutationOptions<UpdateElementMutation, UpdateElementMutationVariables>;
+export type UpdateElementMutationOptions = Apollo.MutationHookOptions<UpdateElementMutation, UpdateElementMutationVariables>;

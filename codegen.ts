@@ -22,6 +22,14 @@ const config: CodegenConfig = {
       ],
       config: {
         withHooks: true,
+        // NOTE: @graphql-codegen/typescript-react-apollo has no Apollo Client
+        // v4 support (latest is 4.x, still v3-oriented). After regenerating,
+        // the output needs manual fixups to compile against @apollo/client v4:
+        //   - `import * as Apollo from '@apollo/client'` -> '@apollo/client/react'
+        //   - `Apollo.MutationFunction` -> `Apollo.useMutation.MutationFunction`
+        //   - `Apollo.BaseMutationOptions` -> `Apollo.MutationHookOptions`
+        //   - the generated *SuspenseQuery hooks need @ts-ignore (unused here)
+        // Longer term, migrate to @graphql-codegen/client-preset.
         reactApolloVersion: 3,
         scalars: {
           // Map GraphQL scalars to TS types as you add them in the schema.
