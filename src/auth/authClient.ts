@@ -7,10 +7,11 @@ import {
   InMemoryCache,
   makeVar,
   Observable,
-  useReactiveVar,
 } from '@apollo/client';
+import {CombinedGraphQLErrors} from '@apollo/client/errors';
 import {setContext} from '@apollo/client/link/context';
 import {onError} from '@apollo/client/link/error';
+import {useReactiveVar} from '@apollo/client/react';
 import {config} from '../config';
 import {
   type LoginMutation,
@@ -108,13 +109,11 @@ async function doRefresh(): Promise<AuthState | null> {
 }
 
 function extractAuthErrorCode(err: unknown): string | undefined {
-  // Apollo wraps GraphQL errors in an ApolloError with a graphQLErrors array.
-  const graphQLErrors =
-    err && typeof err === 'object' && 'graphQLErrors' in err
-      ? (err as {graphQLErrors?: ReadonlyArray<{extensions?: {code?: string}}>})
-          .graphQLErrors
-      : undefined;
-  return graphQLErrors?.[0]?.extensions?.code;
+  // Apollo Client 4 wraps GraphQL errors thrown from an operation in a
+  // CombinedGraphQLErrors instance, exposing them as an `errors` array.
+  if (!CombinedGraphQLErrors.is(err)) return undefined;
+  const code = err.errors[0]?.extensions?.code;
+  return typeof code === 'string' ? code : undefined;
 }
 
 function isAuthHousekeepingOperation(operation: Operation): boolean {
@@ -150,8 +149,10 @@ const authLink = setContext(async (request, prevContext) => {
 // 2. Handle auth-related GraphQL error codes. On TOKEN_EXPIRED, refresh and
 //    replay the original operation once. On TOKEN_REUSE_DETECTED / REVOKED /
 //    INVALID, clear tokens (and optionally raise a security warning).
-const errorLink = onError(({graphQLErrors, operation, forward}) => {
-  if (!graphQLErrors || graphQLErrors.length === 0) return;
+const errorLink = onError(({error, operation, forward}) => {
+  if (!CombinedGraphQLErrors.is(error)) return;
+  const graphQLErrors = error.errors;
+  if (graphQLErrors.length === 0) return;
   const code = graphQLErrors[0]?.extensions?.code;
   if (typeof code !== 'string') return;
 

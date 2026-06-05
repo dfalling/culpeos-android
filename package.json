@@ -13,7 +13,7 @@
     "postinstall": "git rev-parse --git-dir > /dev/null 2>&1 && git config core.hooksPath .githooks || true"
   },
   "dependencies": {
-    "@apollo/client": "^3.11.0",
+    "@apollo/client": "^4.0.0",
     "@bam.tech/react-native-image-resizer": "^3.0.11",
     "@maplibre/maplibre-react-native": "^11.2.1",
     "@react-native/new-app-screen": "0.85.3",

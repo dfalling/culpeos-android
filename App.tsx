@@ -4,7 +4,7 @@
  * @format
  */
 
-import {ApolloProvider} from '@apollo/client';
+import {ApolloProvider} from '@apollo/client/react';
 import {
   DarkTheme,
   DefaultTheme,
