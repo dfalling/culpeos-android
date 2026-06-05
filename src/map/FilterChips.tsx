@@ -1,4 +1,7 @@
+import {useMemo} from 'react';
 import {Pressable, StyleSheet, Text, View} from 'react-native';
+import type {Theme} from '../theme/colors';
+import {useTheme} from '../theme/useTheme';
 
 // Stands in for the trip's emoji on a label pill, so the two filter kinds read
 // differently while sharing one pill style.
@@ -27,6 +30,8 @@ export function FilterChips({
   onClearTrip,
   onClearLabel,
 }: Props) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   if (!trip && labels.length === 0) return null;
   return (
     <View style={[styles.wrap, {top: topOffset}]} pointerEvents="box-none">
@@ -65,6 +70,8 @@ function FilterPill({
   accessibilityLabel: string;
   onClear: () => void;
 }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <View style={styles.pill}>
       {icon ? <Text style={styles.icon}>{icon}</Text> : null}
@@ -83,57 +90,58 @@ function FilterPill({
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    alignItems: 'center',
-  },
-  row: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  pill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    maxWidth: '100%',
-    backgroundColor: '#ffffff',
-    borderRadius: 20,
-    paddingLeft: 14,
-    paddingRight: 6,
-    paddingVertical: 6,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    shadowOffset: {width: 0, height: 2},
-    elevation: 4,
-  },
-  icon: {
-    fontSize: 15,
-    lineHeight: 18,
-    marginRight: 6,
-  },
-  title: {
-    flexShrink: 1,
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1d6fe0',
-  },
-  clearButton: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 8,
-    backgroundColor: '#eef3fb',
-  },
-  clearIcon: {
-    color: '#1d6fe0',
-    fontSize: 16,
-    lineHeight: 18,
-  },
-});
+const makeStyles = (theme: Theme) =>
+  StyleSheet.create({
+    wrap: {
+      position: 'absolute',
+      left: 16,
+      right: 16,
+      alignItems: 'center',
+    },
+    row: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'center',
+      gap: 8,
+    },
+    pill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      maxWidth: '100%',
+      backgroundColor: theme.card,
+      borderRadius: 20,
+      paddingLeft: 14,
+      paddingRight: 6,
+      paddingVertical: 6,
+      shadowColor: '#000',
+      shadowOpacity: 0.2,
+      shadowRadius: 4,
+      shadowOffset: {width: 0, height: 2},
+      elevation: 4,
+    },
+    icon: {
+      fontSize: 15,
+      lineHeight: 18,
+      marginRight: 6,
+    },
+    title: {
+      flexShrink: 1,
+      fontSize: 14,
+      fontWeight: '600',
+      color: theme.accent,
+    },
+    clearButton: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginLeft: 8,
+      backgroundColor: theme.accentMuted,
+    },
+    clearIcon: {
+      color: theme.accent,
+      fontSize: 16,
+      lineHeight: 18,
+    },
+  });

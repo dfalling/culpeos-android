@@ -1,6 +1,8 @@
-import {type ReactNode, useEffect, useRef, useState} from 'react';
+import {type ReactNode, useEffect, useMemo, useRef, useState} from 'react';
 import {Animated, BackHandler, Pressable, StyleSheet, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import type {Theme} from '../theme/colors';
+import {useTheme} from '../theme/useTheme';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -32,6 +34,8 @@ export function Sheet({
   scrimAccessibilityLabel = 'Close',
   children,
 }: Props) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const safeAreaInsets = useSafeAreaInsets();
   const anim = useRef(new Animated.Value(0)).current;
   const [sheetHeight, setSheetHeight] = useState(0);
@@ -83,34 +87,35 @@ export function Sheet({
   );
 }
 
-const styles = StyleSheet.create({
-  scrim: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-  },
-  sheetWrap: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  card: {
-    backgroundColor: '#ffffff',
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    paddingTop: 8,
-    paddingHorizontal: 8,
-  },
-  handle: {
-    alignSelf: 'center',
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#d0d0d0',
-    marginBottom: 12,
-  },
-});
+const makeStyles = (theme: Theme) =>
+  StyleSheet.create({
+    scrim: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: theme.scrim,
+    },
+    sheetWrap: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      bottom: 0,
+    },
+    card: {
+      backgroundColor: theme.card,
+      borderTopLeftRadius: 16,
+      borderTopRightRadius: 16,
+      paddingTop: 8,
+      paddingHorizontal: 8,
+    },
+    handle: {
+      alignSelf: 'center',
+      width: 36,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: theme.handle,
+      marginBottom: 12,
+    },
+  });
