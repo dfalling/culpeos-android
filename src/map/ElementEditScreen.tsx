@@ -22,6 +22,7 @@ import {
   useUpdateElementMutation,
 } from '../graphql/__generated__/types';
 import type {RootStackParamList} from '../navigation/types';
+import {photoImageSource} from '../photos/photoImageSource';
 import {usePhotoUploader} from '../photos/photoUpload';
 import type {Theme} from '../theme/colors';
 import {useTheme} from '../theme/useTheme';
@@ -254,7 +255,7 @@ function EditForm({element, onDone}: {element: Element; onDone: () => void}) {
             {photos.map(photo => (
               <View key={photo.id} style={styles.photoThumbWrap}>
                 <Image
-                  source={{uri: photo.thumbnail}}
+                  source={photoImageSource(photo.thumbnail)}
                   style={styles.photoThumb}
                 />
                 <Pressable
