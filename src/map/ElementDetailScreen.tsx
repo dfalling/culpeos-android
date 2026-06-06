@@ -15,6 +15,7 @@ import {
   useElementDetailQuery,
 } from '../graphql/__generated__/types';
 import type {RootStackParamList} from '../navigation/types';
+import {photoImageSource} from '../photos/photoImageSource';
 import type {Theme} from '../theme/colors';
 import {useTheme} from '../theme/useTheme';
 
@@ -122,7 +123,7 @@ function ModalContents({
               {element.photos.map(photo => (
                 <Image
                   key={photo.id}
-                  source={{uri: photo.regular}}
+                  source={photoImageSource(photo.regular)}
                   style={styles.photo}
                 />
               ))}
