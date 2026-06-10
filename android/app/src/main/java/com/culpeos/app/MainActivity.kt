@@ -3,6 +3,7 @@ package com.culpeos.app
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
@@ -41,10 +42,20 @@ class MainActivity : ReactActivity() {
    * VIEW intent in place. React Native's Linking module reads `intent.getData()` for both the
    * cold-start URL and warm `url` events, so this is all the bridging the JS side needs — no
    * native module required. The raw, messy shared text is percent-encoded and decoded back in JS.
+   *
+   * We combine EXTRA_SUBJECT and EXTRA_TEXT because some apps (notably Google Maps) put the
+   * human-readable name in the subject and only a bare URL in the text. Prepending the subject
+   * as its own line lets the backend's text parser pick up the name instead of falling back to
+   * a generic title like "Google Maps Location".
    */
   private fun rewriteShareIntent(intent: Intent?) {
     if (intent == null || intent.action != Intent.ACTION_SEND) return
-    val shared = intent.getStringExtra(Intent.EXTRA_TEXT) ?: return
+    val text = intent.getStringExtra(Intent.EXTRA_TEXT)
+    val subject = intent.getStringExtra(Intent.EXTRA_SUBJECT)
+    // Temporary: surfaces the raw extras so a real Google Maps share can be inspected via
+    // `adb logcat -s CulpeosShare` on a device with Play Services. Remove once verified.
+    Log.i("CulpeosShare", "subject=$subject | text=$text")
+    val shared = listOfNotNull(subject, text).joinToString("\n").ifEmpty { return }
     intent.action = Intent.ACTION_VIEW
     intent.data = Uri.parse("culpeos://share?content=" + Uri.encode(shared))
   }
