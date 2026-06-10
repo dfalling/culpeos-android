@@ -28,7 +28,7 @@ const config: CodegenConfig = {
         //   - `import * as Apollo from '@apollo/client'` -> '@apollo/client/react'
         //   - `Apollo.MutationFunction` -> `Apollo.useMutation.MutationFunction`
         //   - `Apollo.BaseMutationOptions` -> `Apollo.MutationHookOptions`
-        //   - the generated *SuspenseQuery hooks need @ts-ignore (unused here)
+        //   - the generated *SuspenseQuery hooks need a "ts-ignore" directive (unused here)
         // Longer term, migrate to @graphql-codegen/client-preset.
         reactApolloVersion: 3,
         scalars: {
