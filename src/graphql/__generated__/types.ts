@@ -85,7 +85,11 @@ export type ElementInput = {
   labels?: InputMaybe<Array<Scalars['String']['input']>>;
   location?: InputMaybe<LocationInput>;
   name: Scalars['String']['input'];
-  /** The element's photos, as an ordered list of photo ids (from createPhoto). This is the complete desired set: reordering, removing, or adding ids reorders/removes/adds photos. Omit to leave photos unchanged. */
+  /**
+   * The element's photos, as an ordered list of photo ids (from createPhoto). This
+   * is the complete desired set: reordering, removing, or adding ids
+   * reorders/removes/adds photos. Omit to leave photos unchanged.
+   */
   photoIds?: InputMaybe<Array<Scalars['String']['input']>>;
   schedule?: InputMaybe<ScheduleInput>;
   tripIds?: InputMaybe<Array<Scalars['String']['input']>>;
@@ -600,6 +604,13 @@ export type CreateUploadUrlQueryVariables = Exact<{
 
 export type CreateUploadUrlQuery = { __typename?: 'RootQueryType', createUploadUrl: { __typename?: 'FileUploadUrl', url: string, key: string } };
 
+export type DeleteElementMutationVariables = Exact<{
+  id: Scalars['String']['input'];
+}>;
+
+
+export type DeleteElementMutation = { __typename?: 'RootMutationType', deleteElement: { __typename?: 'Element', id: string } };
+
 export type ElementDetailQueryVariables = Exact<{
   id: Scalars['String']['input'];
 }>;
@@ -652,19 +663,17 @@ export type SearchQueryVariables = Exact<{
 
 export type SearchQuery = { __typename?: 'RootQueryType', elements: Array<{ __typename?: 'Element', id: string, name: string, icon: string, labels: Array<string>, location?: { __typename?: 'Location', id: string, address: string, latitude: number, longitude: number } | null }>, trips: Array<{ __typename?: 'Trip', id: string, name: string, icon: string, description: string }>, placeSearch: Array<{ __typename?: 'GooglePlace', placeId: string, name: string, address: string, latitude: number, longitude: number, types?: Array<string> | null }> };
 
+export type TripsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type TripsQuery = { __typename?: 'RootQueryType', trips: Array<{ __typename?: 'Trip', id: string, name: string, icon: string }> };
+
 export type UpdateElementMutationVariables = Exact<{
   input: ElementInput;
 }>;
 
 
 export type UpdateElementMutation = { __typename?: 'RootMutationType', updateElement: { __typename?: 'Element', id: string, name: string, icon: string, description: string, completed: boolean, uri: string, labels: Array<string>, trips: Array<{ __typename?: 'Trip', id: string }>, location?: { __typename?: 'Location', id: string, address: string, latitude: number, longitude: number, placeId?: string | null } | null, photos: Array<{ __typename?: 'Photo', id: string, thumbnail: string, regular: string, description: string }>, schedule?: { __typename?: 'Schedule', id: string, allDay: boolean, startDate: any, endDate: any, startTime?: any | null, endTime?: any | null, startTz: string, endTz: string } | null } };
-
-export type DeleteElementMutationVariables = Exact<{
-  id: Scalars['String']['input'];
-}>;
-
-
-export type DeleteElementMutation = { __typename?: 'RootMutationType', deleteElement: { __typename?: 'Element', id: string } };
 
 
 export const CreatePhotoDocument = gql`
@@ -749,6 +758,39 @@ export type CreateUploadUrlQueryHookResult = ReturnType<typeof useCreateUploadUr
 export type CreateUploadUrlLazyQueryHookResult = ReturnType<typeof useCreateUploadUrlLazyQuery>;
 export type CreateUploadUrlSuspenseQueryHookResult = ReturnType<typeof useCreateUploadUrlSuspenseQuery>;
 export type CreateUploadUrlQueryResult = Apollo.QueryResult<CreateUploadUrlQuery, CreateUploadUrlQueryVariables>;
+export const DeleteElementDocument = gql`
+    mutation DeleteElement($id: String!) {
+  deleteElement(id: $id) {
+    id
+  }
+}
+    `;
+export type DeleteElementMutationFn = Apollo.useMutation.MutationFunction<DeleteElementMutation, DeleteElementMutationVariables>;
+
+/**
+ * __useDeleteElementMutation__
+ *
+ * To run a mutation, you first call `useDeleteElementMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useDeleteElementMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [deleteElementMutation, { data, loading, error }] = useDeleteElementMutation({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useDeleteElementMutation(baseOptions?: Apollo.MutationHookOptions<DeleteElementMutation, DeleteElementMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<DeleteElementMutation, DeleteElementMutationVariables>(DeleteElementDocument, options);
+      }
+export type DeleteElementMutationHookResult = ReturnType<typeof useDeleteElementMutation>;
+export type DeleteElementMutationResult = Apollo.MutationResult<DeleteElementMutation>;
+export type DeleteElementMutationOptions = Apollo.MutationHookOptions<DeleteElementMutation, DeleteElementMutationVariables>;
 export const ElementDetailDocument = gql`
     query ElementDetail($id: String!) {
   element(id: $id) {
@@ -1133,6 +1175,52 @@ export type SearchQueryHookResult = ReturnType<typeof useSearchQuery>;
 export type SearchLazyQueryHookResult = ReturnType<typeof useSearchLazyQuery>;
 export type SearchSuspenseQueryHookResult = ReturnType<typeof useSearchSuspenseQuery>;
 export type SearchQueryResult = Apollo.QueryResult<SearchQuery, SearchQueryVariables>;
+export const TripsDocument = gql`
+    query Trips {
+  trips {
+    id
+    name
+    icon
+  }
+}
+    `;
+
+/**
+ * __useTripsQuery__
+ *
+ * To run a query within a React component, call `useTripsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useTripsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useTripsQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useTripsQuery(baseOptions?: Apollo.QueryHookOptions<TripsQuery, TripsQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<TripsQuery, TripsQueryVariables>(TripsDocument, options);
+      }
+export function useTripsLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<TripsQuery, TripsQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<TripsQuery, TripsQueryVariables>(TripsDocument, options);
+        }
+// @ts-ignore
+export function useTripsSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<TripsQuery, TripsQueryVariables>): Apollo.UseSuspenseQueryResult<TripsQuery, TripsQueryVariables>;
+// @ts-ignore typescript-react-apollo (v3 plugin) emits suspense hooks incompatible with Apollo Client v4 option/result types; these hooks are unused.
+export function useTripsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<TripsQuery, TripsQueryVariables>): Apollo.UseSuspenseQueryResult<TripsQuery | undefined, TripsQueryVariables>;
+export function useTripsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<TripsQuery, TripsQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          // @ts-ignore typescript-react-apollo (v3 plugin) emits suspense hooks incompatible with Apollo Client v4 option/result types; these hooks are unused.
+          return Apollo.useSuspenseQuery<TripsQuery, TripsQueryVariables>(TripsDocument, options);
+        }
+export type TripsQueryHookResult = ReturnType<typeof useTripsQuery>;
+export type TripsLazyQueryHookResult = ReturnType<typeof useTripsLazyQuery>;
+export type TripsSuspenseQueryHookResult = ReturnType<typeof useTripsSuspenseQuery>;
+export type TripsQueryResult = Apollo.QueryResult<TripsQuery, TripsQueryVariables>;
 export const UpdateElementDocument = gql`
     mutation UpdateElement($input: ElementInput!) {
   updateElement(input: $input) {
@@ -1198,36 +1286,3 @@ export function useUpdateElementMutation(baseOptions?: Apollo.MutationHookOption
 export type UpdateElementMutationHookResult = ReturnType<typeof useUpdateElementMutation>;
 export type UpdateElementMutationResult = Apollo.MutationResult<UpdateElementMutation>;
 export type UpdateElementMutationOptions = Apollo.MutationHookOptions<UpdateElementMutation, UpdateElementMutationVariables>;
-export const DeleteElementDocument = gql`
-    mutation DeleteElement($id: String!) {
-  deleteElement(id: $id) {
-    id
-  }
-}
-    `;
-export type DeleteElementMutationFn = Apollo.useMutation.MutationFunction<DeleteElementMutation, DeleteElementMutationVariables>;
-
-/**
- * __useDeleteElementMutation__
- *
- * To run a mutation, you first call `useDeleteElementMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useDeleteElementMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [deleteElementMutation, { data, loading, error }] = useDeleteElementMutation({
- *   variables: {
- *      id: // value for 'id'
- *   },
- * });
- */
-export function useDeleteElementMutation(baseOptions?: Apollo.MutationHookOptions<DeleteElementMutation, DeleteElementMutationVariables>) {
-        const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useMutation<DeleteElementMutation, DeleteElementMutationVariables>(DeleteElementDocument, options);
-      }
-export type DeleteElementMutationHookResult = ReturnType<typeof useDeleteElementMutation>;
-export type DeleteElementMutationResult = Apollo.MutationResult<DeleteElementMutation>;
-export type DeleteElementMutationOptions = Apollo.MutationHookOptions<DeleteElementMutation, DeleteElementMutationVariables>;

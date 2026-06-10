@@ -21,6 +21,7 @@ import {
   type ElementInput,
   useDeleteElementMutation,
   useElementDetailQuery,
+  useTripsQuery,
   useUpdateElementMutation,
 } from '../graphql/__generated__/types';
 import type {RootStackParamList} from '../navigation/types';
@@ -28,6 +29,7 @@ import {photoImageSource} from '../photos/photoImageSource';
 import {usePhotoUploader} from '../photos/photoUpload';
 import type {Theme} from '../theme/colors';
 import {useTheme} from '../theme/useTheme';
+import {Sheet} from '../ui/Sheet';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ElementEdit'>;
 
@@ -72,8 +74,8 @@ export function ElementEditScreen({route, navigation}: Props) {
 /**
  * The form initializes its fields from the loaded element, so it's rendered
  * only once the element is available. We round-trip every field the mutation
- * requires — including the ones we don't expose (uri, icon, location, schedule,
- * labels, trips) — so saving an edit doesn't clear them.
+ * requires — including the ones we don't expose (location, schedule, labels) —
+ * so saving an edit doesn't clear them.
  */
 function EditForm({
   element,
@@ -97,13 +99,30 @@ function EditForm({
   const [photos, setPhotos] = useState<{id: string; thumbnail: string}[]>(() =>
     element.photos.map(photo => ({id: photo.id, thumbnail: photo.thumbnail})),
   );
+  // The complete desired set of trip ids this element belongs to. Initialized
+  // from the element and toggled via the trip sheet; sent as tripIds on save.
+  // Ids of trips the user can't see (not in the trips list) are still kept here
+  // so saving doesn't drop them.
+  const [tripIds, setTripIds] = useState<string[]>(() =>
+    element.trips.map(trip => trip.id),
+  );
+  const [tripSheetOpen, setTripSheetOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [updateElement, {loading: saving}] = useUpdateElementMutation();
   const [deleteElement, {loading: deleting}] = useDeleteElementMutation();
   const {pickAndUpload, uploading} = usePhotoUploader();
+  const {data: tripsData} = useTripsQuery();
+  const allTrips = tripsData?.trips ?? [];
+  const selectedTrips = allTrips.filter(trip => tripIds.includes(trip.id));
 
   const busy = saving || uploading || deleting;
+
+  function toggleTrip(id: string) {
+    setTripIds(prev =>
+      prev.includes(id) ? prev.filter(tripId => tripId !== id) : [...prev, id],
+    );
+  }
 
   const trimmedUri = uri.trim();
   const uriValid = isValidUrl(trimmedUri);
@@ -143,9 +162,9 @@ function EditForm({
       completed,
       // Complete desired set of photo ids, in order: reorders/removes/adds.
       photoIds: photos.map(photo => photo.id),
+      tripIds,
       // Preserved as-is — not editable here, but required by the mutation.
       labels: element.labels,
-      tripIds: element.trips.map(trip => trip.id),
       location: element.location
         ? {
             address: element.location.address,
@@ -346,6 +365,32 @@ function EditForm({
           />
         </Field>
 
+        <Field label="Trips">
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Choose trips"
+            disabled={saving}
+            onPress={() => setTripSheetOpen(true)}
+            style={styles.tripsSelector}>
+            {selectedTrips.length > 0 ? (
+              <View style={styles.tripPills}>
+                {selectedTrips.map(trip => (
+                  <View key={trip.id} style={styles.tripPill}>
+                    {trip.icon ? (
+                      <Text style={styles.tripPillIcon}>{trip.icon}</Text>
+                    ) : null}
+                    <Text style={styles.tripPillText} numberOfLines={1}>
+                      {trip.name}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <Text style={styles.tripsPlaceholder}>Add to trips</Text>
+            )}
+          </Pressable>
+        </Field>
+
         {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
 
         <Pressable
@@ -367,6 +412,44 @@ function EditForm({
         onClose={() => setPickerOpen(false)}
         onEmojiSelected={emoji => setIcon(emoji.emoji)}
       />
+
+      <Sheet
+        visible={tripSheetOpen}
+        onClose={() => setTripSheetOpen(false)}
+        scrimAccessibilityLabel="Close trip picker">
+        <Text style={styles.sheetTitle}>Trips</Text>
+        {allTrips.length === 0 ? (
+          <Text style={styles.sheetEmpty}>No trips available.</Text>
+        ) : (
+          <ScrollView
+            style={styles.tripList}
+            keyboardShouldPersistTaps="handled">
+            {allTrips.map(trip => {
+              const selected = tripIds.includes(trip.id);
+              return (
+                <Pressable
+                  key={trip.id}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{checked: selected}}
+                  accessibilityLabel={trip.name}
+                  onPress={() => toggleTrip(trip.id)}
+                  style={({pressed}) => [
+                    styles.tripRow,
+                    pressed && styles.tripRowPressed,
+                  ]}>
+                  {trip.icon ? (
+                    <Text style={styles.tripRowIcon}>{trip.icon}</Text>
+                  ) : null}
+                  <Text style={styles.tripRowName} numberOfLines={1}>
+                    {trip.name}
+                  </Text>
+                  {selected ? <Text style={styles.tripRowCheck}>✓</Text> : null}
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        )}
+      </Sheet>
     </KeyboardAvoidingView>
   );
 }
@@ -519,6 +602,86 @@ const makeStyles = (theme: Theme) =>
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
+    },
+    tripsSelector: {
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 12,
+      minHeight: 48,
+      justifyContent: 'center',
+    },
+    tripsPlaceholder: {
+      fontSize: 16,
+      color: theme.textTertiary,
+    },
+    tripPills: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+    },
+    tripPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      maxWidth: '100%',
+      backgroundColor: theme.accentMuted,
+      borderRadius: 16,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+    },
+    tripPillIcon: {
+      fontSize: 14,
+      lineHeight: 18,
+      marginRight: 6,
+    },
+    tripPillText: {
+      flexShrink: 1,
+      fontSize: 14,
+      fontWeight: '600',
+      color: theme.accent,
+    },
+    sheetTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: theme.textPrimary,
+      paddingHorizontal: 12,
+      paddingBottom: 8,
+    },
+    sheetEmpty: {
+      fontSize: 14,
+      color: theme.textSecondary,
+      paddingHorizontal: 12,
+      paddingVertical: 12,
+    },
+    tripList: {
+      maxHeight: 320,
+    },
+    tripRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 12,
+      paddingVertical: 14,
+      borderRadius: 8,
+    },
+    tripRowPressed: {
+      backgroundColor: theme.surfaceMuted,
+    },
+    tripRowIcon: {
+      fontSize: 18,
+      lineHeight: 22,
+      marginRight: 10,
+    },
+    tripRowName: {
+      flex: 1,
+      fontSize: 16,
+      color: theme.textPrimary,
+    },
+    tripRowCheck: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: theme.accent,
+      marginLeft: 12,
     },
     error: {
       color: theme.error,
