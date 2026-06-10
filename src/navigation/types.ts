@@ -11,6 +11,9 @@ export type RootStackParamList = {
   Map: {addLabelFilter?: string} | undefined;
   ElementDetail: {elementId: string};
   ElementEdit: {elementId: string};
+  // Transient loading screen shown while raw shared content (from another app's
+  // share sheet) is sent to importShare; replaced by ElementDetail on success.
+  ImportShare: {content: string};
 };
 
 export type RootStackNavigation = NativeStackNavigationProp<RootStackParamList>;

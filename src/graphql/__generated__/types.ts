@@ -324,6 +324,7 @@ export type RootMutationType = {
   forgotPassword: Scalars['String']['output'];
   importElement: Element;
   importElementAsync: Scalars['Boolean']['output'];
+  importShare: Element;
   login: LoginToken;
   logout: LogoutSuccess;
   register: RegisterSuccess;
@@ -390,6 +391,11 @@ export type RootMutationTypeImportElementArgs = {
 
 export type RootMutationTypeImportElementAsyncArgs = {
   url: Scalars['String']['input'];
+};
+
+
+export type RootMutationTypeImportShareArgs = {
+  content: Scalars['String']['input'];
 };
 
 
@@ -610,6 +616,13 @@ export type ElementsQueryVariables = Exact<{
 
 
 export type ElementsQuery = { __typename?: 'RootQueryType', elements: Array<{ __typename?: 'Element', id: string, name: string, icon: string, labels: Array<string>, location?: { __typename?: 'Location', id: string, latitude: number, longitude: number } | null }> };
+
+export type ImportShareMutationVariables = Exact<{
+  content: Scalars['String']['input'];
+}>;
+
+
+export type ImportShareMutation = { __typename?: 'RootMutationType', importShare: { __typename?: 'Element', id: string, name: string, icon: string, description: string, completed: boolean, uri: string, labels: Array<string>, trips: Array<{ __typename?: 'Trip', id: string }>, location?: { __typename?: 'Location', id: string, address: string, latitude: number, longitude: number, placeId?: string | null } | null, photos: Array<{ __typename?: 'Photo', id: string, thumbnail: string, regular: string, description: string }>, schedule?: { __typename?: 'Schedule', id: string, allDay: boolean, startDate: any, endDate: any, startTime?: any | null, endTime?: any | null, startTz: string, endTz: string } | null } };
 
 export type LoginMutationVariables = Exact<{
   input: LoginInput;
@@ -867,6 +880,71 @@ export type ElementsQueryHookResult = ReturnType<typeof useElementsQuery>;
 export type ElementsLazyQueryHookResult = ReturnType<typeof useElementsLazyQuery>;
 export type ElementsSuspenseQueryHookResult = ReturnType<typeof useElementsSuspenseQuery>;
 export type ElementsQueryResult = Apollo.QueryResult<ElementsQuery, ElementsQueryVariables>;
+export const ImportShareDocument = gql`
+    mutation ImportShare($content: String!) {
+  importShare(content: $content) {
+    id
+    name
+    icon
+    description
+    completed
+    uri
+    labels
+    trips {
+      id
+    }
+    location {
+      id
+      address
+      latitude
+      longitude
+      placeId
+    }
+    photos {
+      id
+      thumbnail
+      regular
+      description
+    }
+    schedule {
+      id
+      allDay
+      startDate
+      endDate
+      startTime
+      endTime
+      startTz
+      endTz
+    }
+  }
+}
+    `;
+export type ImportShareMutationFn = Apollo.useMutation.MutationFunction<ImportShareMutation, ImportShareMutationVariables>;
+
+/**
+ * __useImportShareMutation__
+ *
+ * To run a mutation, you first call `useImportShareMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useImportShareMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [importShareMutation, { data, loading, error }] = useImportShareMutation({
+ *   variables: {
+ *      content: // value for 'content'
+ *   },
+ * });
+ */
+export function useImportShareMutation(baseOptions?: Apollo.MutationHookOptions<ImportShareMutation, ImportShareMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<ImportShareMutation, ImportShareMutationVariables>(ImportShareDocument, options);
+      }
+export type ImportShareMutationHookResult = ReturnType<typeof useImportShareMutation>;
+export type ImportShareMutationResult = Apollo.MutationResult<ImportShareMutation>;
+export type ImportShareMutationOptions = Apollo.MutationHookOptions<ImportShareMutation, ImportShareMutationVariables>;
 export const LoginDocument = gql`
     mutation Login($input: LoginInput!) {
   login(input: $input) {
