@@ -1,0 +1,5 @@
+mutation DeleteElement($id: String!) {
+  deleteElement(id: $id) {
+    id
+  }
+}

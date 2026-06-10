@@ -2,6 +2,7 @@ import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useMemo, useState} from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -18,6 +19,7 @@ import EmojiPicker from 'rn-emoji-keyboard';
 import {
   type ElementDetailQuery,
   type ElementInput,
+  useDeleteElementMutation,
   useElementDetailQuery,
   useUpdateElementMutation,
 } from '../graphql/__generated__/types';
@@ -49,7 +51,15 @@ export function ElementEditScreen({route, navigation}: Props) {
   return (
     <View style={styles.screen}>
       {element ? (
-        <EditForm element={element} onDone={() => navigation.goBack()} />
+        <EditForm
+          element={element}
+          onDone={() => navigation.goBack()}
+          // popTo (not goBack) so we pass the map back over the now-stale detail
+          // screen, and hand it the deleted id to drop from its pin set.
+          onDeleted={() =>
+            navigation.popTo('Map', {removedElementId: elementId})
+          }
+        />
       ) : (
         <View style={styles.loadingPane}>
           {loading ? <ActivityIndicator /> : null}
@@ -65,7 +75,15 @@ export function ElementEditScreen({route, navigation}: Props) {
  * requires — including the ones we don't expose (uri, icon, location, schedule,
  * labels, trips) — so saving an edit doesn't clear them.
  */
-function EditForm({element, onDone}: {element: Element; onDone: () => void}) {
+function EditForm({
+  element,
+  onDone,
+  onDeleted,
+}: {
+  element: Element;
+  onDone: () => void;
+  onDeleted: () => void;
+}) {
   const theme = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const safeAreaInsets = useSafeAreaInsets();
@@ -82,7 +100,10 @@ function EditForm({element, onDone}: {element: Element; onDone: () => void}) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [updateElement, {loading: saving}] = useUpdateElementMutation();
+  const [deleteElement, {loading: deleting}] = useDeleteElementMutation();
   const {pickAndUpload, uploading} = usePhotoUploader();
+
+  const busy = saving || uploading || deleting;
 
   const trimmedUri = uri.trim();
   const uriValid = isValidUrl(trimmedUri);
@@ -90,10 +111,7 @@ function EditForm({element, onDone}: {element: Element; onDone: () => void}) {
     trimmedUri.length > 0 && !uriValid ? 'Enter a valid URL.' : null;
 
   const canSave =
-    name.trim().length > 0 &&
-    (trimmedUri.length === 0 || uriValid) &&
-    !saving &&
-    !uploading;
+    name.trim().length > 0 && (trimmedUri.length === 0 || uriValid) && !busy;
 
   async function onAddPhoto() {
     setErrorMessage(null);
@@ -157,6 +175,38 @@ function EditForm({element, onDone}: {element: Element; onDone: () => void}) {
     }
   }
 
+  function onDelete() {
+    Alert.alert(
+      'Delete element',
+      `Permanently delete "${element.name}"? This can't be undone.`,
+      [
+        {text: 'Cancel', style: 'cancel'},
+        {text: 'Delete', style: 'destructive', onPress: confirmDelete},
+      ],
+    );
+  }
+
+  async function confirmDelete() {
+    setErrorMessage(null);
+    try {
+      await deleteElement({
+        variables: {id: element.id},
+        // Drop the element from the cache so the detail/list queries it backs
+        // stop returning it; the map prunes its own accumulated set via the
+        // removedElementId nav param.
+        update(cache) {
+          cache.evict({
+            id: cache.identify({__typename: 'Element', id: element.id}),
+          });
+          cache.gc();
+        },
+      });
+      onDeleted();
+    } catch {
+      setErrorMessage('Could not delete element. Please try again.');
+    }
+  }
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -167,7 +217,7 @@ function EditForm({element, onDone}: {element: Element; onDone: () => void}) {
           accessibilityLabel="Cancel editing"
           hitSlop={10}
           onPress={onDone}
-          disabled={saving}
+          disabled={busy}
           style={styles.headerButton}>
           <Text style={styles.headerButtonText}>Cancel</Text>
         </Pressable>
@@ -297,6 +347,19 @@ function EditForm({element, onDone}: {element: Element; onDone: () => void}) {
         </Field>
 
         {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
+
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Delete element"
+          onPress={onDelete}
+          disabled={busy}
+          style={[styles.deleteButton, busy && styles.deleteButtonDisabled]}>
+          {deleting ? (
+            <ActivityIndicator color={theme.error} />
+          ) : (
+            <Text style={styles.deleteButtonText}>Delete element</Text>
+          )}
+        </Pressable>
       </ScrollView>
 
       <EmojiPicker
@@ -460,5 +523,22 @@ const makeStyles = (theme: Theme) =>
     error: {
       color: theme.error,
       fontSize: 14,
+    },
+    deleteButton: {
+      marginTop: 12,
+      paddingVertical: 16,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: theme.error,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    deleteButtonDisabled: {
+      opacity: 0.4,
+    },
+    deleteButtonText: {
+      color: theme.error,
+      fontSize: 16,
+      fontWeight: '600',
     },
   });
