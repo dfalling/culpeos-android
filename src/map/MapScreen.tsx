@@ -241,6 +241,22 @@ export function MapScreen() {
     });
   }, [data?.elements, tripFilter]);
 
+  // An element deleted from the edit screen navigates back here with its id in
+  // route params; drop it from the accumulated set (which otherwise only grows)
+  // so its pin disappears, then clear the param so it isn't re-applied.
+  const removedElementId = route.params?.removedElementId;
+  useEffect(() => {
+    if (!removedElementId) return;
+    setSelectedElementId(prev => (prev === removedElementId ? null : prev));
+    setElementsById(prev => {
+      if (!prev.has(removedElementId)) return prev;
+      const next = new Map(prev);
+      next.delete(removedElementId);
+      return next;
+    });
+    navigation.setParams({removedElementId: undefined});
+  }, [removedElementId, navigation]);
+
   // Only render markers whose location falls inside the last-known viewport.
   // <Marker> is a native View — rendering offscreen ones still costs layout
   // and reprojection on every camera frame, so we cull client-side.
