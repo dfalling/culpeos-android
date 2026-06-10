@@ -24,6 +24,14 @@
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
+        <!-- Receive text/URLs shared from other apps' share sheets. The shared
+             content arrives as ACTION_SEND EXTRA_TEXT; MainActivity rewrites it
+             into a culpeos://share deep link so the JS Linking layer picks it up. -->
+        <intent-filter>
+            <action android:name="android.intent.action.SEND" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <data android:mimeType="text/plain" />
+        </intent-filter>
         <!-- App Links: open culpeos.com confirm/reset emails in this app.
              Requires /.well-known/assetlinks.json on the server to list the
              signing keystore's SHA-256 fingerprint for com.culpeos.app. -->
