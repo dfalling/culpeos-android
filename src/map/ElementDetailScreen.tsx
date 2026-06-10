@@ -3,6 +3,7 @@ import {useMemo} from 'react';
 import {
   ActivityIndicator,
   Image,
+  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -133,6 +134,20 @@ function ModalContents({
           {element.description ? (
             <Section title="About">
               <Text style={styles.body}>{element.description}</Text>
+            </Section>
+          ) : null}
+
+          {element.uri ? (
+            <Section title="Link">
+              <Pressable
+                accessibilityRole="link"
+                accessibilityLabel={`Open link ${element.uri}`}
+                onPress={() => Linking.openURL(element.uri)}
+                style={({pressed}) => pressed && styles.linkPressed}>
+                <Text style={styles.link} numberOfLines={2}>
+                  {element.uri}
+                </Text>
+              </Pressable>
             </Section>
           ) : null}
 
@@ -320,6 +335,14 @@ const makeStyles = (theme: Theme) =>
       fontSize: 15,
       lineHeight: 21,
       color: theme.textPrimary,
+    },
+    link: {
+      fontSize: 15,
+      lineHeight: 21,
+      color: theme.accent,
+    },
+    linkPressed: {
+      opacity: 0.6,
     },
     labelRow: {
       flexDirection: 'row',
