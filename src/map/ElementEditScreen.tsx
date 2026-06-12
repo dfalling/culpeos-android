@@ -74,7 +74,7 @@ export function ElementEditScreen({route, navigation}: Props) {
 /**
  * The form initializes its fields from the loaded element, so it's rendered
  * only once the element is available. We round-trip every field the mutation
- * requires — including the ones we don't expose (location, schedule, labels) —
+ * requires — including the ones we don't expose (location, schedule) —
  * so saving an edit doesn't clear them.
  */
 function EditForm({
@@ -107,6 +107,10 @@ function EditForm({
     element.trips.map(trip => trip.id),
   );
   const [tripSheetOpen, setTripSheetOpen] = useState(false);
+  // The complete desired set of labels, in display order; sent as labels on
+  // save. labelDraft holds the in-progress text for the add-label input.
+  const [labels, setLabels] = useState<string[]>(() => [...element.labels]);
+  const [labelDraft, setLabelDraft] = useState('');
   const [pickerOpen, setPickerOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [updateElement, {loading: saving}] = useUpdateElementMutation();
@@ -151,6 +155,19 @@ function EditForm({
     setPhotos(prev => prev.filter(photo => photo.id !== id));
   }
 
+  function onAddLabel() {
+    const label = labelDraft.trim();
+    if (!label) return;
+    // Labels are free-form strings matched exactly when filtering, so skip
+    // exact duplicates rather than adding a second identical chip.
+    setLabels(prev => (prev.includes(label) ? prev : [...prev, label]));
+    setLabelDraft('');
+  }
+
+  function onRemoveLabel(label: string) {
+    setLabels(prev => prev.filter(existing => existing !== label));
+  }
+
   async function onSave() {
     setErrorMessage(null);
     const input: ElementInput = {
@@ -163,8 +180,7 @@ function EditForm({
       // Complete desired set of photo ids, in order: reorders/removes/adds.
       photoIds: photos.map(photo => photo.id),
       tripIds,
-      // Preserved as-is — not editable here, but required by the mutation.
-      labels: element.labels,
+      labels,
       location: element.location
         ? {
             address: element.location.address,
@@ -389,6 +405,53 @@ function EditForm({
               <Text style={styles.tripsPlaceholder}>Add to trips</Text>
             )}
           </Pressable>
+        </Field>
+
+        <Field label="Labels">
+          {labels.length > 0 ? (
+            <View style={styles.labelRow}>
+              {labels.map(label => (
+                <View key={label} style={styles.labelChip}>
+                  <Text style={styles.labelChipText}>{label}</Text>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Remove label ${label}`}
+                    hitSlop={8}
+                    disabled={saving}
+                    onPress={() => onRemoveLabel(label)}
+                    style={styles.labelChipRemove}>
+                    <Text style={styles.labelChipRemoveIcon}>×</Text>
+                  </Pressable>
+                </View>
+              ))}
+            </View>
+          ) : null}
+          <View style={styles.labelInputRow}>
+            <TextInput
+              style={[styles.input, styles.flex]}
+              value={labelDraft}
+              onChangeText={setLabelDraft}
+              placeholder="Add a label"
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="done"
+              onSubmitEditing={onAddLabel}
+              blurOnSubmit={false}
+              editable={!saving}
+            />
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Add label"
+              disabled={saving || labelDraft.trim().length === 0}
+              onPress={onAddLabel}
+              style={[
+                styles.labelAdd,
+                (saving || labelDraft.trim().length === 0) &&
+                  styles.labelAddDisabled,
+              ]}>
+              <Text style={styles.labelAddText}>Add</Text>
+            </Pressable>
+          </View>
         </Field>
 
         {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
@@ -682,6 +745,60 @@ const makeStyles = (theme: Theme) =>
       fontWeight: '700',
       color: theme.accent,
       marginLeft: 12,
+    },
+    labelRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 6,
+    },
+    labelChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      backgroundColor: theme.accentMuted,
+      paddingLeft: 10,
+      paddingRight: 6,
+      paddingVertical: 5,
+      borderRadius: 12,
+    },
+    labelChipText: {
+      color: theme.accent,
+      fontSize: 12,
+      fontWeight: '500',
+    },
+    labelChipRemove: {
+      width: 16,
+      height: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    labelChipRemoveIcon: {
+      color: theme.accent,
+      fontSize: 16,
+      lineHeight: 18,
+      fontWeight: '600',
+    },
+    labelInputRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    labelAdd: {
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: theme.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    labelAddDisabled: {
+      opacity: 0.4,
+    },
+    labelAddText: {
+      color: theme.action,
+      fontSize: 16,
+      fontWeight: '600',
     },
     error: {
       color: theme.error,
