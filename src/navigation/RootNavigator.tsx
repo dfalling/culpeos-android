@@ -11,6 +11,10 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
  * The authenticated app's screen stack. Headers are hidden — each screen draws
  * its own chrome edge-to-edge and applies its own safe-area padding. The detail
  * screen slides in from the right as a standard forward push.
+ *
+ * Transition speed: react-navigation's `animationDuration` option is a no-op on
+ * Android, so the slide duration is set by overriding react-native-screens'
+ * anim resources in android/app/src/main/res/anim/rns_slide_*.xml.
  */
 export function RootNavigator() {
   return (
