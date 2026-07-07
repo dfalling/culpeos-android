@@ -9,6 +9,12 @@ import type {ImageURISource} from 'react-native';
 const USER_AGENT = 'Culpeos/0.0.1 (https://culpeos.com)';
 
 // Builds an Image `source` for a photo URL with a User-Agent header attached.
-export function photoImageSource(uri: string): ImageURISource {
-  return {uri, headers: {'User-Agent': USER_AGENT}};
+//
+// Must be a single-element array, not a plain `{uri, headers}` object: on
+// Android, `Image`'s native-props translation (Libraries/Image/Image.android.js)
+// only forwards `headers` to the native view when `source` resolves to an
+// array — for a single object it drops them silently, so the request never
+// carries the header and the fix above has no effect.
+export function photoImageSource(uri: string): ImageURISource[] {
+  return [{uri, headers: {'User-Agent': USER_AGENT}}];
 }
