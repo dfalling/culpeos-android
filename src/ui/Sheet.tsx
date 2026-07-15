@@ -79,7 +79,6 @@ export function Sheet({
         <View
           onLayout={e => setSheetHeight(e.nativeEvent.layout.height)}
           style={[styles.card, {paddingBottom: safeAreaInsets.bottom + 12}]}>
-          <View style={styles.handle} />
           {children}
         </View>
       </Animated.View>
@@ -107,15 +106,7 @@ const makeStyles = (theme: Theme) =>
       backgroundColor: theme.card,
       borderTopLeftRadius: 16,
       borderTopRightRadius: 16,
-      paddingTop: 8,
+      paddingTop: 20,
       paddingHorizontal: 8,
-    },
-    handle: {
-      alignSelf: 'center',
-      width: 36,
-      height: 4,
-      borderRadius: 2,
-      backgroundColor: theme.handle,
-      marginBottom: 12,
     },
   });
