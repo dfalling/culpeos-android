@@ -23,7 +23,6 @@ export type Theme = {
 
   // Lines.
   border: string;
-  handle: string; // sheet grabber bar
 
   // Brand accent (blue) and its tints.
   accent: string; // primary actions, links, icons
@@ -71,7 +70,6 @@ export const lightTheme: Theme = {
   textTertiary: '#999999',
 
   border: '#dddddd',
-  handle: '#d0d0d0',
 
   accent: '#1d6fe0',
   accentStrong: '#0b4ea2',
@@ -109,7 +107,6 @@ export const darkTheme: Theme = {
   textTertiary: '#7e7e7e',
 
   border: '#3a3a3a',
-  handle: '#4a4a4a',
 
   accent: '#4f93f0',
   accentStrong: '#7badf5',
