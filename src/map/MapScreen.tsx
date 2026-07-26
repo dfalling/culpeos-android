@@ -58,6 +58,23 @@ const OFF_CENTER_THRESHOLD = 0.2;
 // Margin above the device safe area for bottom-anchored overlays (recenter
 // button, preview card).
 const BOTTOM_MARGIN = 16;
+// Map pin geometry, mirroring the web app's `.maplibre-marker-pin`: a square
+// with three rounded corners, rotated -45° so the square corner points down.
+// Web draws it at 30px; we size up for touch.
+const PIN_SIZE = 36;
+// Selected pins only grow (and draw on top); the fill stays red, as on web.
+const PIN_SELECTED_SCALE = 1.25;
+// Rotating the square makes it occupy a box of side × √2, and selecting scales
+// that up further. The marker view is sized for that largest case, so a
+// selected pin and its shadow never rely on overflowing it.
+const PIN_DIAGONAL = PIN_SIZE * Math.SQRT2;
+const PIN_BOX = PIN_DIAGONAL * PIN_SELECTED_SCALE;
+// A resting pin therefore floats above the box's bottom edge, which is what
+// the "bottom" anchor pins to; shifting the marker down by that slack puts the
+// tip back on the coordinate. Selecting one grows it into the slack, nudging
+// the tip just below the coordinate — as the web app's scale-on-hover does.
+// One shared array, so the native prop doesn't look changed on every render.
+const PIN_OFFSET: [number, number] = [0, (PIN_BOX - PIN_DIAGONAL) / 2];
 
 export function MapScreen() {
   const theme = useTheme();
@@ -288,6 +305,20 @@ export function MapScreen() {
   // doesn't drop pins; otherwise use the bounds-culled accumulated set.
   const displayedElements = tripFilter ? tripElements : visibleElements;
 
+  // Markers stack in render order, so move the selected one to the end and it
+  // draws over its neighbours instead of being buried under them once it grows
+  // (the web app gets this from `z-index` on `.marker-highlighted`).
+  const orderedElements = useMemo(() => {
+    if (!selectedElementId) return displayedElements;
+    const index = displayedElements.findIndex(
+      el => el.id === selectedElementId,
+    );
+    if (index < 0) return displayedElements;
+    const ordered = displayedElements.slice();
+    ordered.push(...ordered.splice(index, 1));
+    return ordered;
+  }, [displayedElements, selectedElementId]);
+
   // Fit the camera to the trip's extent once its elements arrive. Guarded by a
   // ref so panning/zooming afterwards doesn't snap back, and reset when the
   // filter clears so re-selecting the same trip fits again.
@@ -391,12 +422,16 @@ export function MapScreen() {
         onRegionDidChange={onRegionDidChange}>
         <Camera ref={cameraRef} initialViewState={initialViewState} />
         <UserLocation animated accuracy />
-        {displayedElements.map(el =>
+        {orderedElements.map(el =>
           el.location ? (
             <Marker
               key={el.id}
               id={el.id}
               lngLat={[el.location.longitude, el.location.latitude]}
+              // The teardrop's tip marks the spot, so hang the pin above the
+              // coordinate rather than centring it on top of it.
+              anchor="bottom"
+              offset={PIN_OFFSET}
               onPress={e => {
                 // The marker's "onPress" event bubbles up to the Map's
                 // onPress (both are codegen BubblingEventHandlers), which
@@ -404,12 +439,16 @@ export function MapScreen() {
                 e.stopPropagation();
                 setSelectedElementId(el.id);
               }}>
-              <View
-                style={[
-                  styles.pin,
-                  selectedElementId === el.id && styles.pinSelected,
-                ]}>
-                {el.icon ? <Text style={styles.pinIcon}>{el.icon}</Text> : null}
+              <View style={styles.pinBox}>
+                <View
+                  style={[
+                    styles.pin,
+                    selectedElementId === el.id && styles.pinSelected,
+                  ]}>
+                  {el.icon ? (
+                    <Text style={styles.pinIcon}>{el.icon}</Text>
+                  ) : null}
+                </View>
               </View>
             </Marker>
           ) : null,
@@ -466,24 +505,42 @@ const makeStyles = (theme: Theme) =>
     map: {
       flex: 1,
     },
-    pin: {
-      width: 36,
-      height: 36,
-      borderRadius: 18,
-      backgroundColor: theme.pin,
-      borderWidth: 2,
-      borderColor: theme.pinBorder,
+    // Roomy enough to contain the pin at its selected size, shadow included.
+    pinBox: {
+      width: PIN_BOX,
+      height: PIN_BOX,
       alignItems: 'center',
       justifyContent: 'center',
     },
+    pin: {
+      width: PIN_SIZE,
+      height: PIN_SIZE,
+      // Three rounded corners and one square one: the teardrop's tip.
+      borderTopLeftRadius: PIN_SIZE / 2,
+      borderTopRightRadius: PIN_SIZE / 2,
+      borderBottomRightRadius: PIN_SIZE / 2,
+      borderBottomLeftRadius: 0,
+      backgroundColor: theme.pin,
+      borderWidth: 1,
+      borderColor: theme.pinBorder,
+      alignItems: 'center',
+      justifyContent: 'center',
+      boxShadow: [
+        {offsetX: 0, offsetY: 2, blurRadius: 4, color: 'rgba(0,0,0,0.4)'},
+      ],
+      transform: [{rotate: '-45deg'}],
+    },
     pinSelected: {
-      backgroundColor: theme.pinSelected,
-      transform: [{scale: 1.15}],
+      // Repeats the rotation because a later style's `transform` replaces the
+      // whole list rather than merging into it.
+      transform: [{rotate: '-45deg'}, {scale: PIN_SELECTED_SCALE}],
     },
     pinIcon: {
-      fontSize: 18,
-      lineHeight: 22,
+      fontSize: 16,
+      lineHeight: 20,
       textAlign: 'center',
+      // Counter-rotate so the emoji stays upright inside the rotated pin.
+      transform: [{rotate: '45deg'}],
     },
     recenterButton: {
       position: 'absolute',

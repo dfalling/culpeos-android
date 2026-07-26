@@ -48,15 +48,21 @@ export type Theme = {
 
   // Map.
   mapStyleUrl: string;
-  pin: string;
-  pinSelected: string;
-  pinBorder: string; // ring around a pin, for contrast against the basemap
+  pin: string; // teardrop pin fill
+  pinBorder: string; // hairline outline around a pin, for contrast
   mapButtonBg: string; // recenter button background
   mapButtonIcon: string;
 };
 
 const MAP_STYLE_LIGHT = 'https://tiles.openfreemap.org/styles/liberty';
 const MAP_STYLE_DARK = 'https://tiles.openfreemap.org/styles/dark';
+
+// Pins are the same Google-Maps red in both appearances, matching the web app
+// (`.maplibre-marker-pin` in culpeos assets/css/app.css) so the same place
+// reads the same wherever it's opened. The outline is a translucent black
+// hairline rather than a theme color, which works over either basemap.
+const PIN_RED = '#ea4335';
+const PIN_OUTLINE = 'rgba(0,0,0,0.2)';
 
 export const lightTheme: Theme = {
   scheme: 'light',
@@ -88,9 +94,8 @@ export const lightTheme: Theme = {
   scrim: 'rgba(0,0,0,0.35)',
 
   mapStyleUrl: MAP_STYLE_LIGHT,
-  pin: '#1d6fe0',
-  pinSelected: '#0b4ea2',
-  pinBorder: '#ffffff',
+  pin: PIN_RED,
+  pinBorder: PIN_OUTLINE,
   mapButtonBg: '#ffffff',
   mapButtonIcon: '#1d6fe0',
 };
@@ -125,11 +130,8 @@ export const darkTheme: Theme = {
   scrim: 'rgba(0,0,0,0.6)',
 
   mapStyleUrl: MAP_STYLE_DARK,
-  pin: '#4f93f0',
-  pinSelected: '#7badf5',
-  // A near-black ring keeps pins reading as solid dots on the dark basemap
-  // while still separating them from one another.
-  pinBorder: '#121212',
+  pin: PIN_RED,
+  pinBorder: PIN_OUTLINE,
   mapButtonBg: '#1e1e1e',
   mapButtonIcon: '#4f93f0',
 };
