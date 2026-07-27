@@ -20,6 +20,7 @@ import {PhotoViewer} from '../photos/PhotoViewer';
 import {photoImageSource} from '../photos/photoImageSource';
 import type {Theme} from '../theme/colors';
 import {useTheme} from '../theme/useTheme';
+import {formatSchedule} from './formatSchedule';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ElementDetail'>;
 
@@ -227,17 +228,6 @@ function Section({
       {children}
     </View>
   );
-}
-
-function formatSchedule(schedule: NonNullable<ElementDetail['schedule']>) {
-  const {allDay, startDate, endDate, startTime, endTime} = schedule;
-  const range = startDate === endDate ? startDate : `${startDate} – ${endDate}`;
-  if (allDay || (!startTime && !endTime)) return range;
-  const time =
-    startTime && endTime
-      ? `${startTime}–${endTime}`
-      : (startTime ?? endTime ?? '');
-  return `${range} · ${time}`;
 }
 
 const makeStyles = (theme: Theme) =>
