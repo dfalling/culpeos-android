@@ -1,5 +1,5 @@
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {useMemo} from 'react';
+import {useMemo, useState} from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -16,6 +16,7 @@ import {
   useElementDetailQuery,
 } from '../graphql/__generated__/types';
 import type {RootStackParamList} from '../navigation/types';
+import {PhotoViewer} from '../photos/PhotoViewer';
 import {photoImageSource} from '../photos/photoImageSource';
 import type {Theme} from '../theme/colors';
 import {useTheme} from '../theme/useTheme';
@@ -23,6 +24,8 @@ import {useTheme} from '../theme/useTheme';
 type Props = NativeStackScreenProps<RootStackParamList, 'ElementDetail'>;
 
 type ElementDetail = ElementDetailQuery['element'];
+
+type ElementPhoto = ElementDetail['photos'][number];
 
 export function ElementDetailScreen({route, navigation}: Props) {
   const {elementId} = route.params;
@@ -64,6 +67,7 @@ function ModalContents({
   const theme = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const safeAreaInsets = useSafeAreaInsets();
+  const [viewedPhoto, setViewedPhoto] = useState<ElementPhoto | null>(null);
 
   return (
     <View style={styles.container}>
@@ -122,11 +126,21 @@ function ModalContents({
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.photoStrip}>
               {element.photos.map(photo => (
-                <Image
+                <Pressable
                   key={photo.id}
-                  source={photoImageSource(photo.regular)}
-                  style={styles.photo}
-                />
+                  accessibilityRole="imagebutton"
+                  accessibilityLabel={
+                    photo.description
+                      ? `View photo full screen: ${photo.description}`
+                      : 'View photo full screen'
+                  }
+                  onPress={() => setViewedPhoto(photo)}
+                  style={({pressed}) => pressed && styles.photoPressed}>
+                  <Image
+                    source={photoImageSource(photo.regular)}
+                    style={styles.photo}
+                  />
+                </Pressable>
               ))}
             </ScrollView>
           ) : null}
@@ -184,6 +198,19 @@ function ModalContents({
           {loading ? <ActivityIndicator /> : null}
         </View>
       )}
+
+      {/*
+        Sibling of the ScrollView, not a child: as an overlay it has to cover
+        the header too, and a PanResponder nested inside a scroll view would
+        fight it for the pinch.
+      */}
+      {viewedPhoto ? (
+        <PhotoViewer
+          uri={viewedPhoto.regular}
+          description={viewedPhoto.description}
+          onClose={() => setViewedPhoto(null)}
+        />
+      ) : null}
     </View>
   );
 }
@@ -319,6 +346,9 @@ const makeStyles = (theme: Theme) =>
       height: 140,
       borderRadius: 10,
       backgroundColor: theme.surfaceMuted,
+    },
+    photoPressed: {
+      opacity: 0.7,
     },
     section: {
       marginTop: 20,
