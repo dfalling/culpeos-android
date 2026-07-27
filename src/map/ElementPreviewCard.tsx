@@ -30,9 +30,7 @@ export function ElementPreviewCard({
       }
       onPress={onExpand}
       style={[styles.card, {bottom: bottomOffset}]}>
-      <View style={styles.iconWrap}>
-        {element?.icon ? <Text style={styles.icon}>{element.icon}</Text> : null}
-      </View>
+      {element?.icon ? <Text style={styles.icon}>{element.icon}</Text> : null}
       <View style={styles.body}>
         <Text style={styles.title} numberOfLines={1}>
           {element?.name ?? (loading ? 'Loading…' : ' ')}
@@ -77,19 +75,12 @@ const makeStyles = (theme: Theme) =>
       shadowOffset: {width: 0, height: 2},
       elevation: 6,
     },
-    iconWrap: {
-      width: 44,
-      height: 44,
-      borderRadius: 22,
-      backgroundColor: theme.accent,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginRight: 12,
-    },
+    // No wrapping badge: the emoji stands on its own, and an element without an
+    // icon renders nothing at all so the text fills the whole card.
     icon: {
-      fontSize: 22,
-      lineHeight: 26,
-      textAlign: 'center',
+      fontSize: 28,
+      lineHeight: 34,
+      marginRight: 12,
     },
     body: {
       flex: 1,

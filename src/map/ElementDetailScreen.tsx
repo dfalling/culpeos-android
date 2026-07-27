@@ -98,11 +98,9 @@ function ModalContents({
             {paddingBottom: safeAreaInsets.bottom + 24},
           ]}>
           <View style={styles.hero}>
-            <View style={styles.iconWrap}>
-              {element.icon ? (
-                <Text style={styles.icon}>{element.icon}</Text>
-              ) : null}
-            </View>
+            {element.icon ? (
+              <Text style={styles.icon}>{element.icon}</Text>
+            ) : null}
             <View style={styles.heroBody}>
               <Text style={styles.title}>{element.name}</Text>
               {element.location?.address ? (
@@ -270,19 +268,12 @@ const makeStyles = (theme: Theme) =>
       flexDirection: 'row',
       alignItems: 'center',
     },
-    iconWrap: {
-      width: 56,
-      height: 56,
-      borderRadius: 28,
-      backgroundColor: theme.accent,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginRight: 14,
-    },
+    // No wrapping badge: the emoji stands on its own, and an element without an
+    // icon renders nothing at all so the title fills the whole row.
     icon: {
-      fontSize: 28,
-      lineHeight: 32,
-      textAlign: 'center',
+      fontSize: 36,
+      lineHeight: 44,
+      marginRight: 12,
     },
     heroBody: {
       flex: 1,
