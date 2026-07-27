@@ -104,7 +104,6 @@ function ModalContents({
               ) : null}
             </View>
             <View style={styles.heroBody}>
-              <Text style={styles.title}>{element.name}</Text>
               {element.location?.address ? (
                 <Text style={styles.subtitle}>{element.location.address}</Text>
               ) : null}
@@ -286,16 +285,11 @@ const makeStyles = (theme: Theme) =>
     },
     heroBody: {
       flex: 1,
-    },
-    title: {
-      fontSize: 22,
-      fontWeight: '700',
-      color: theme.textPrimary,
+      gap: 6,
     },
     subtitle: {
       fontSize: 13,
       color: theme.textSecondary,
-      marginTop: 4,
     },
     completedTag: {
       alignSelf: 'flex-start',
@@ -303,7 +297,6 @@ const makeStyles = (theme: Theme) =>
       paddingHorizontal: 8,
       paddingVertical: 3,
       borderRadius: 10,
-      marginTop: 8,
     },
     completedTagText: {
       color: theme.success,
