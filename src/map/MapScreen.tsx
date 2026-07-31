@@ -1,9 +1,13 @@
 import {
   Camera,
   type CameraRef,
+  GeoJSONSource,
+  Images,
+  Layer,
   LocationManager,
   Map as MapLibreMap,
-  Marker,
+  type PressEventWithFeatures,
+  type SymbolLayerSpecification,
   UserLocation,
   useCurrentPosition,
   type ViewStateChangeEvent,
@@ -32,6 +36,7 @@ import type {Theme} from '../theme/colors';
 import {useTheme} from '../theme/useTheme';
 import {ElementPreviewCard} from './ElementPreviewCard';
 import {FilterChips} from './FilterChips';
+import {PIN_PADDING, PIN_SELECTED_SCALE} from './PinIcon';
 import {zoomForPlaceTypes} from './placeZoom';
 import {
   type SearchElement,
@@ -39,9 +44,11 @@ import {
   type SearchPlace,
   type SearchTrip,
 } from './SearchOverlay';
+import {usePinImages} from './usePinImages';
 import {type Viewport, viewportStore} from './viewportStore';
 
 type ElementWithLocation = ElementsQuery['elements'][number];
+type PinLayout = NonNullable<SymbolLayerSpecification['layout']>;
 
 const USER_ZOOM = 14;
 // Zoom used when flying to a searched element, and for single-element trips
@@ -58,23 +65,15 @@ const OFF_CENTER_THRESHOLD = 0.2;
 // Margin above the device safe area for bottom-anchored overlays (recenter
 // button, preview card).
 const BOTTOM_MARGIN = 16;
-// Map pin geometry, mirroring the web app's `.maplibre-marker-pin`: a square
-// with three rounded corners, rotated -45° so the square corner points down.
-// Web draws it at 30px; we size up for touch.
-const PIN_SIZE = 36;
-// Selected pins only grow (and draw on top); the fill stays red, as on web.
-const PIN_SELECTED_SCALE = 1.25;
-// Rotating the square makes it occupy a box of side × √2, and selecting scales
-// that up further. The marker view is sized for that largest case, so a
-// selected pin and its shadow never rely on overflowing it.
-const PIN_DIAGONAL = PIN_SIZE * Math.SQRT2;
-const PIN_BOX = PIN_DIAGONAL * PIN_SELECTED_SCALE;
-// A resting pin therefore floats above the box's bottom edge, which is what
-// the "bottom" anchor pins to; shifting the marker down by that slack puts the
-// tip back on the coordinate. Selecting one grows it into the slack, nudging
-// the tip just below the coordinate — as the web app's scale-on-hover does.
-// One shared array, so the native prop doesn't look changed on every render.
-const PIN_OFFSET: [number, number] = [0, (PIN_BOX - PIN_DIAGONAL) / 2];
+// Ids for the map style's pin source and layer.
+const PIN_SOURCE_ID = 'element-pins';
+const PIN_LAYER_ID = 'element-pins-symbols';
+// The pin image is padded so its shadow has room to spill, leaving the
+// teardrop's tip that far above the image's bottom edge. Anchoring the symbol
+// at its bottom and then offsetting it down by the padding puts the tip back on
+// the element's coordinate. Icon offsets are multiplied by the icon size, so
+// this holds at both resting and selected scale.
+const PIN_ICON_OFFSET: [number, number] = [0, PIN_PADDING];
 
 export function MapScreen() {
   const theme = useTheme();
@@ -274,25 +273,24 @@ export function MapScreen() {
     navigation.setParams({removedElementId: undefined});
   }, [removedElementId, navigation]);
 
-  // Only render markers whose location falls inside the last-known viewport.
-  // <Marker> is a native View — rendering offscreen ones still costs layout
-  // and reprojection on every camera frame, so we cull client-side.
-  const visibleElements = useMemo(() => {
-    if (!bounds) return [];
-    const {left, right, bottom, top} = bounds;
-    return Array.from(elementsById.values()).filter(el => {
-      if (!el.location) return false;
-      const {longitude: lng, latitude: lat} = el.location;
-      if (lng < left || lng > right || lat < bottom || lat > top) return false;
-      // Apply the label filter client-side too (matching the query's ALL
-      // semantics) so pins accumulated before the filter was set — or that no
-      // longer match it — stop rendering without waiting for a refetch.
-      return labelFilters.every(label => el.labels.includes(label));
-    });
-  }, [elementsById, bounds, labelFilters]);
+  // Every located element we've accumulated. There's no viewport cull: pins are
+  // symbols in the map style now, so MapLibre culls them per tile on the render
+  // thread and offscreen ones cost nothing — culling here only made pins pop in
+  // at the screen edges.
+  const locatedElements = useMemo(
+    () =>
+      Array.from(elementsById.values()).filter(el => {
+        if (!el.location) return false;
+        // Apply the label filter client-side too (matching the query's ALL
+        // semantics) so pins accumulated before the filter was set — or that no
+        // longer match it — stop rendering without waiting for a refetch.
+        return labelFilters.every(label => el.labels.includes(label));
+      }),
+    [elementsById, labelFilters],
+  );
 
-  // Elements with a location for the active trip; drives both the markers and
-  // the camera fit while filtering.
+  // Elements with a location for the active trip; drives both the pins and the
+  // camera fit while filtering.
   const tripElements = useMemo(
     () =>
       tripFilter
@@ -301,23 +299,92 @@ export function MapScreen() {
     [tripFilter, data?.elements],
   );
 
-  // In trip mode render the whole trip (no viewport cull) so panning around it
-  // doesn't drop pins; otherwise use the bounds-culled accumulated set.
-  const displayedElements = tripFilter ? tripElements : visibleElements;
+  // While filtering by trip, show only that trip's elements so trip-only
+  // results don't mix with the accumulated viewport set.
+  const displayedElements = tripFilter ? tripElements : locatedElements;
 
-  // Markers stack in render order, so move the selected one to the end and it
-  // draws over its neighbours instead of being buried under them once it grows
-  // (the web app gets this from `z-index` on `.marker-highlighted`).
-  const orderedElements = useMemo(() => {
-    if (!selectedElementId) return displayedElements;
-    const index = displayedElements.findIndex(
-      el => el.id === selectedElementId,
-    );
-    if (index < 0) return displayedElements;
-    const ordered = displayedElements.slice();
-    ordered.push(...ordered.splice(index, 1));
-    return ordered;
-  }, [displayedElements, selectedElementId]);
+  // A symbol can only draw an image the style knows about, so each distinct
+  // element icon gets rasterised into one.
+  const pinIcons = useMemo(
+    () => Array.from(new Set(displayedElements.map(el => el.icon))),
+    [displayedElements],
+  );
+  const {
+    images: pinImages,
+    rasterizer: pinRasterizer,
+    imageNameFor,
+  } = usePinImages(theme, pinIcons);
+
+  const pinFeatures = useMemo<GeoJSON.FeatureCollection<GeoJSON.Point>>(
+    () => ({
+      type: 'FeatureCollection',
+      features: displayedElements.flatMap(el =>
+        el.location
+          ? [
+              {
+                type: 'Feature' as const,
+                geometry: {
+                  type: 'Point' as const,
+                  coordinates: [el.location.longitude, el.location.latitude],
+                },
+                properties: {
+                  elementId: el.id,
+                  // Resolving the image name here means the data is rebuilt as
+                  // pins finish rasterising — a handful of times on startup,
+                  // then not again.
+                  image: imageNameFor(el.icon),
+                },
+              },
+            ]
+          : [],
+      ),
+    }),
+    [displayedElements, imageNameFor],
+  );
+
+  // Selection is expressed as style expressions over the feature's id rather
+  // than baked into the source data, so selecting a pin re-sends the layout
+  // instead of every feature.
+  const pinLayout = useMemo<PinLayout>(
+    () => ({
+      'icon-image': ['get', 'image'],
+      // The teardrop's tip marks the spot, so hang the pin above the coordinate
+      // rather than centring it on top of it.
+      'icon-anchor': 'bottom',
+      'icon-offset': PIN_ICON_OFFSET,
+      'icon-size': selectedElementId
+        ? [
+            'case',
+            ['==', ['get', 'elementId'], selectedElementId],
+            PIN_SELECTED_SCALE,
+            1,
+          ]
+        : 1,
+      // Every element gets a pin, so keep MapLibre's label-collision logic from
+      // hiding any of them.
+      'icon-allow-overlap': true,
+      'icon-ignore-placement': true,
+      // Symbols with a lower sort key are drawn first, so the selected pin's
+      // higher key lifts it clear of its neighbours once it grows (the web app
+      // gets this from `z-index` on `.marker-highlighted`).
+      'symbol-sort-key': selectedElementId
+        ? ['case', ['==', ['get', 'elementId'], selectedElementId], 1, 0]
+        : 0,
+    }),
+    [selectedElementId],
+  );
+
+  const handlePinPress = useCallback(
+    (event: NativeSyntheticEvent<PressEventWithFeatures>) => {
+      const elementId = event.nativeEvent.features[0]?.properties?.elementId;
+      if (typeof elementId !== 'string') return;
+      // The source's press event bubbles up to the Map's onPress, which would
+      // immediately clear the selection we just set.
+      event.stopPropagation();
+      setSelectedElementId(elementId);
+    },
+    [],
+  );
 
   // Fit the camera to the trip's extent once its elements arrive. Guarded by a
   // ref so panning/zooming afterwards doesn't snap back, and reset when the
@@ -422,38 +489,15 @@ export function MapScreen() {
         onRegionDidChange={onRegionDidChange}>
         <Camera ref={cameraRef} initialViewState={initialViewState} />
         <UserLocation animated accuracy />
-        {orderedElements.map(el =>
-          el.location ? (
-            <Marker
-              key={el.id}
-              id={el.id}
-              lngLat={[el.location.longitude, el.location.latitude]}
-              // The teardrop's tip marks the spot, so hang the pin above the
-              // coordinate rather than centring it on top of it.
-              anchor="bottom"
-              offset={PIN_OFFSET}
-              onPress={e => {
-                // The marker's "onPress" event bubbles up to the Map's
-                // onPress (both are codegen BubblingEventHandlers), which
-                // would immediately clear the selection we just set.
-                e.stopPropagation();
-                setSelectedElementId(el.id);
-              }}>
-              <View style={styles.pinBox}>
-                <View
-                  style={[
-                    styles.pin,
-                    selectedElementId === el.id && styles.pinSelected,
-                  ]}>
-                  {el.icon ? (
-                    <Text style={styles.pinIcon}>{el.icon}</Text>
-                  ) : null}
-                </View>
-              </View>
-            </Marker>
-          ) : null,
-        )}
+        <Images images={pinImages} />
+        <GeoJSONSource
+          id={PIN_SOURCE_ID}
+          data={pinFeatures}
+          onPress={handlePinPress}>
+          <Layer id={PIN_LAYER_ID} type="symbol" layout={pinLayout} />
+        </GeoJSONSource>
       </MapLibreMap>
+      {pinRasterizer}
       {position && !isCenteredOnUser && !selectedElementId ? (
         <TouchableOpacity
           accessibilityLabel="Recenter map on your location"
@@ -504,43 +548,6 @@ const makeStyles = (theme: Theme) =>
     },
     map: {
       flex: 1,
-    },
-    // Roomy enough to contain the pin at its selected size, shadow included.
-    pinBox: {
-      width: PIN_BOX,
-      height: PIN_BOX,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    pin: {
-      width: PIN_SIZE,
-      height: PIN_SIZE,
-      // Three rounded corners and one square one: the teardrop's tip.
-      borderTopLeftRadius: PIN_SIZE / 2,
-      borderTopRightRadius: PIN_SIZE / 2,
-      borderBottomRightRadius: PIN_SIZE / 2,
-      borderBottomLeftRadius: 0,
-      backgroundColor: theme.pin,
-      borderWidth: 1,
-      borderColor: theme.pinBorder,
-      alignItems: 'center',
-      justifyContent: 'center',
-      boxShadow: [
-        {offsetX: 0, offsetY: 2, blurRadius: 4, color: 'rgba(0,0,0,0.4)'},
-      ],
-      transform: [{rotate: '-45deg'}],
-    },
-    pinSelected: {
-      // Repeats the rotation because a later style's `transform` replaces the
-      // whole list rather than merging into it.
-      transform: [{rotate: '-45deg'}, {scale: PIN_SELECTED_SCALE}],
-    },
-    pinIcon: {
-      fontSize: 16,
-      lineHeight: 20,
-      textAlign: 'center',
-      // Counter-rotate so the emoji stays upright inside the rotated pin.
-      transform: [{rotate: '45deg'}],
     },
     recenterButton: {
       position: 'absolute',

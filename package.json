@@ -26,6 +26,7 @@
     "react-native-image-picker": "^8.2.1",
     "react-native-safe-area-context": "^5.5.2",
     "react-native-screens": "^4.25.2",
+    "react-native-view-shot": "^5.1.1",
     "rn-emoji-keyboard": "^1.7.0"
   },
   "devDependencies": {
