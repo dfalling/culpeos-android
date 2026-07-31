@@ -4,13 +4,14 @@ import type {Theme} from '../theme/colors';
 
 // Map pin geometry, mirroring the web app's `.maplibre-marker-pin`: a square
 // with three rounded corners, rotated -45° so the square corner points down.
-// Web draws it at 30px; we size up for touch.
-const PIN_SIZE = 36;
+// Web draws it at 30px; we size up for touch. Exported for `pinHitTest`, which
+// measures taps against the shape these describe.
+export const PIN_SIZE = 36;
 // Selected pins only grow (and draw on top); the fill stays red, as on web.
 export const PIN_SELECTED_SCALE = 1.25;
 // Rotating the square makes it occupy a box of side × √2, with the square
 // corner — the teardrop's tip — landing at the bottom centre of that box.
-const PIN_DIAGONAL = PIN_SIZE * Math.SQRT2;
+export const PIN_DIAGONAL = PIN_SIZE * Math.SQRT2;
 // The drop shadow is drawn outside the pin's own bounds, so the box carries
 // padding on every side for it to spill into; without it the capture below
 // would crop the shadow at the pin's edge. Covers the shadow's 2pt drop plus
