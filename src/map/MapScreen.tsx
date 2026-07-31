@@ -6,6 +6,7 @@ import {
   Layer,
   LocationManager,
   Map as MapLibreMap,
+  type MapRef,
   type PressEventWithFeatures,
   type SymbolLayerSpecification,
   UserLocation,
@@ -37,6 +38,7 @@ import {useTheme} from '../theme/useTheme';
 import {ElementPreviewCard} from './ElementPreviewCard';
 import {FilterChips} from './FilterChips';
 import {PIN_PADDING, PIN_SELECTED_SCALE} from './PinIcon';
+import {pinSortKey, pressedPinId, SELECTED_PIN_SORT_KEY} from './pinHitTest';
 import {zoomForPlaceTypes} from './placeZoom';
 import {
   type SearchElement,
@@ -81,6 +83,7 @@ export function MapScreen() {
   const navigation = useNavigation<RootStackNavigation>();
   const route = useRoute<RouteProp<RootStackParamList, 'Map'>>();
   const cameraRef = useRef<CameraRef>(null);
+  const mapRef = useRef<MapRef>(null);
   // Gate the bounds fetch + viewport-save until we know the map is sitting on
   // a real location — either a restored viewport or a fly-to-user. Prevents
   // the initial zoom-1 world frame from triggering a fetch of every element.
@@ -97,6 +100,10 @@ export function MapScreen() {
   const [selectedElementId, setSelectedElementId] = useState<string | null>(
     null,
   );
+  // Read by the pin press handler, which stays stable across renders so the
+  // native source isn't handed a new callback every time the map re-renders.
+  const selectedElementIdRef = useRef(selectedElementId);
+  selectedElementIdRef.current = selectedElementId;
   // When set, the map is filtered to a single trip: only that trip's elements
   // are shown and the bounds-based query is paused.
   const [tripFilter, setTripFilter] = useState<{
@@ -333,6 +340,7 @@ export function MapScreen() {
                   // pins finish rasterising — a handful of times on startup,
                   // then not again.
                   image: imageNameFor(el.icon),
+                  sortKey: pinSortKey(el.location.latitude),
                 },
               },
             ]
@@ -364,24 +372,47 @@ export function MapScreen() {
       // hiding any of them.
       'icon-allow-overlap': true,
       'icon-ignore-placement': true,
-      // Symbols with a lower sort key are drawn first, so the selected pin's
-      // higher key lifts it clear of its neighbours once it grows (the web app
-      // gets this from `z-index` on `.marker-highlighted`).
+      // Symbols with a lower sort key are drawn first, so this is what stacks
+      // the pins: by latitude, plus the selected one on top of the lot. Which
+      // pin is in front has to be decided rather than left to the order the
+      // features happen to arrive in, so that a tap landing on two pins at once
+      // can go to the one you can actually see — see `pinHitTest`.
       'symbol-sort-key': selectedElementId
-        ? ['case', ['==', ['get', 'elementId'], selectedElementId], 1, 0]
-        : 0,
+        ? [
+            'case',
+            ['==', ['get', 'elementId'], selectedElementId],
+            SELECTED_PIN_SORT_KEY,
+            ['get', 'sortKey'],
+          ]
+        : ['get', 'sortKey'],
     }),
     [selectedElementId],
   );
 
   const handlePinPress = useCallback(
-    (event: NativeSyntheticEvent<PressEventWithFeatures>) => {
-      const elementId = event.nativeEvent.features[0]?.properties?.elementId;
-      if (typeof elementId !== 'string') return;
+    async (event: NativeSyntheticEvent<PressEventWithFeatures>) => {
       // The source's press event bubbles up to the Map's onPress, which would
-      // immediately clear the selection we just set.
+      // immediately clear the selection we're about to set. Stopped — and the
+      // event read — before the first await, while the event is still ours.
       event.stopPropagation();
-      setSelectedElementId(elementId);
+      const {features, point} = event.nativeEvent;
+      const map = mapRef.current;
+      if (!map) return;
+      // MapLibre hands over every pin near the touch, not the one under it, so
+      // the choice between them is ours to make.
+      const elementId = await pressedPinId(
+        {features, point},
+        {
+          selectedId: selectedElementIdRef.current,
+          project: lngLat => map.project(lngLat),
+        },
+      ).catch((error: unknown) => {
+        console.warn('Failed to place map pins for a tap:', error);
+        // Better the pin MapLibre listed first than a tap that does nothing.
+        const first = features[0]?.properties?.elementId;
+        return typeof first === 'string' ? first : null;
+      });
+      if (elementId) setSelectedElementId(elementId);
     },
     [],
   );
@@ -483,6 +514,7 @@ export function MapScreen() {
   return (
     <View style={styles.container}>
       <MapLibreMap
+        ref={mapRef}
         mapStyle={theme.mapStyleUrl}
         style={styles.map}
         onPress={() => setSelectedElementId(null)}
