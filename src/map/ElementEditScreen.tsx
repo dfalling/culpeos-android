@@ -1,3 +1,4 @@
+import {useMutation, useQuery} from '@apollo/client/react';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useMemo, useState} from 'react';
 import {
@@ -17,12 +18,12 @@ import {
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import EmojiPicker from 'rn-emoji-keyboard';
 import {
+  DeleteElementDocument,
+  ElementDetailDocument,
   type ElementDetailQuery,
   type ElementInput,
-  useDeleteElementMutation,
-  useElementDetailQuery,
-  useTripsQuery,
-  useUpdateElementMutation,
+  TripsDocument,
+  UpdateElementDocument,
 } from '../graphql/__generated__/types';
 import type {RootStackParamList} from '../navigation/types';
 import {photoImageSource} from '../photos/photoImageSource';
@@ -47,7 +48,9 @@ export function ElementEditScreen({route, navigation}: Props) {
   const {elementId} = route.params;
   const theme = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
-  const {data, loading} = useElementDetailQuery({variables: {id: elementId}});
+  const {data, loading} = useQuery(ElementDetailDocument, {
+    variables: {id: elementId},
+  });
   const element = data?.element;
 
   return (
@@ -113,10 +116,12 @@ function EditForm({
   const [labelDraft, setLabelDraft] = useState('');
   const [pickerOpen, setPickerOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [updateElement, {loading: saving}] = useUpdateElementMutation();
-  const [deleteElement, {loading: deleting}] = useDeleteElementMutation();
+  const [updateElement, {loading: saving}] = useMutation(UpdateElementDocument);
+  const [deleteElement, {loading: deleting}] = useMutation(
+    DeleteElementDocument,
+  );
   const {pickAndUpload, uploading} = usePhotoUploader();
-  const {data: tripsData} = useTripsQuery();
+  const {data: tripsData} = useQuery(TripsDocument);
   const allTrips = tripsData?.trips ?? [];
   const selectedTrips = allTrips.filter(trip => tripIds.includes(trip.id));
 

@@ -1,3 +1,4 @@
+import {useQuery} from '@apollo/client/react';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useMemo, useState} from 'react';
 import {
@@ -12,8 +13,8 @@ import {
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
+  ElementDetailDocument,
   type ElementDetailQuery,
-  useElementDetailQuery,
 } from '../graphql/__generated__/types';
 import type {RootStackParamList} from '../navigation/types';
 import {PhotoViewer} from '../photos/PhotoViewer';
@@ -21,6 +22,7 @@ import {photoImageSource} from '../photos/photoImageSource';
 import type {Theme} from '../theme/colors';
 import {useTheme} from '../theme/useTheme';
 import {formatSchedule} from './formatSchedule';
+import {metadataRows} from './metadataRows';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ElementDetail'>;
 
@@ -32,7 +34,9 @@ export function ElementDetailScreen({route, navigation}: Props) {
   const {elementId} = route.params;
   const theme = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
-  const {data, loading} = useElementDetailQuery({variables: {id: elementId}});
+  const {data, loading} = useQuery(ElementDetailDocument, {
+    variables: {id: elementId},
+  });
 
   return (
     <View style={styles.screen}>
@@ -69,6 +73,13 @@ function ModalContents({
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const safeAreaInsets = useSafeAreaInsets();
   const [viewedPhoto, setViewedPhoto] = useState<ElementPhoto | null>(null);
+  const booking = useMemo(
+    () =>
+      metadataRows(element?.metadata, {
+        hasLocation: Boolean(element?.location),
+      }),
+    [element?.metadata, element?.location],
+  );
 
   return (
     <View style={styles.container}>
@@ -168,6 +179,34 @@ function ModalContents({
               <Text style={styles.body}>
                 {formatSchedule(element.schedule)}
               </Text>
+            </Section>
+          ) : null}
+
+          {booking.length > 0 ? (
+            <Section title="Booking">
+              <View style={styles.bookingRows}>
+                {booking.map(({key, title, value, link}) => (
+                  <View key={key} style={styles.bookingRow}>
+                    <Text style={styles.bookingLabel}>{title}</Text>
+                    {link ? (
+                      <Pressable
+                        accessibilityRole="link"
+                        accessibilityLabel={`Look up ${title.toLowerCase()} ${value}`}
+                        onPress={() => Linking.openURL(link)}
+                        style={({pressed}) => [
+                          styles.bookingValue,
+                          pressed && styles.linkPressed,
+                        ]}>
+                        <Text style={styles.link}>{value}</Text>
+                      </Pressable>
+                    ) : (
+                      <Text style={[styles.body, styles.bookingValue]}>
+                        {value}
+                      </Text>
+                    )}
+                  </View>
+                ))}
+              </View>
             </Section>
           ) : null}
 
@@ -344,6 +383,25 @@ const makeStyles = (theme: Theme) =>
       fontSize: 15,
       lineHeight: 21,
       color: theme.accent,
+    },
+    bookingRows: {
+      gap: 10,
+    },
+    // Label beside its value rather than above it: booking values are mostly
+    // short codes, and the fixed label column lines them all up for scanning.
+    bookingRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 12,
+    },
+    bookingLabel: {
+      width: 84,
+      fontSize: 13,
+      lineHeight: 21,
+      color: theme.textSecondary,
+    },
+    bookingValue: {
+      flex: 1,
     },
     linkPressed: {
       opacity: 0.6,

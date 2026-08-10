@@ -1,14 +1,11 @@
-import {useApolloClient} from '@apollo/client/react';
+import {useApolloClient, useMutation} from '@apollo/client/react';
 import ImageResizer from '@bam.tech/react-native-image-resizer';
 import {useCallback, useState} from 'react';
 import {launchImageLibrary} from 'react-native-image-picker';
 import {
+  CreatePhotoDocument,
   type CreatePhotoMutation,
   CreateUploadUrlDocument,
-  type CreateUploadUrlQuery,
-  type CreateUploadUrlQueryVariables,
-  PhotoType,
-  useCreatePhotoMutation,
 } from '../graphql/__generated__/types';
 
 // Server-side cap. We downsample on-device so the uploaded JPEG always lands
@@ -121,7 +118,7 @@ export function usePhotoUploader(): {
   uploading: boolean;
 } {
   const client = useApolloClient();
-  const [createPhoto] = useCreatePhotoMutation();
+  const [createPhoto] = useMutation(CreatePhotoDocument);
   const [uploading, setUploading] = useState(false);
 
   const pickAndUpload = useCallback(async () => {
@@ -133,10 +130,10 @@ export function usePhotoUploader(): {
       const uri = await downsampleToLimit(picked);
 
       // Step 1: signed upload URL. no-cache so each upload gets a fresh URL.
-      const {data: urlData} = await client.query<
-        CreateUploadUrlQuery,
-        CreateUploadUrlQueryVariables
-      >({query: CreateUploadUrlDocument, fetchPolicy: 'no-cache'});
+      const {data: urlData} = await client.query({
+        query: CreateUploadUrlDocument,
+        fetchPolicy: 'no-cache',
+      });
       if (!urlData) throw new Error('Failed to get a photo upload URL');
       const {url, key} = urlData.createUploadUrl;
 
@@ -145,7 +142,7 @@ export function usePhotoUploader(): {
 
       // Step 3: register the uploaded object as a Photo.
       const {data: photoData} = await createPhoto({
-        variables: {input: {type: PhotoType.S3, storageKey: key}},
+        variables: {input: {type: 'S3', storageKey: key}},
       });
       const photo = photoData?.createPhoto;
       if (!photo) throw new Error('Photo could not be created.');

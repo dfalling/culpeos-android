@@ -1,3 +1,4 @@
+import {useMutation} from '@apollo/client/react';
 import {useMemo, useState} from 'react';
 import {
   ActivityIndicator,
@@ -9,7 +10,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import {useLoginMutation} from '../graphql/__generated__/types';
+import {LoginDocument} from '../graphql/__generated__/types';
 import type {Theme} from '../theme/colors';
 import {useTheme} from '../theme/useTheme';
 import {clearSecurityWarning, useSecurityWarning} from './authClient';
@@ -50,7 +51,7 @@ export function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [login, {loading}] = useLoginMutation();
+  const [login, {loading}] = useMutation(LoginDocument);
   const securityWarning = useSecurityWarning();
 
   const canSubmit = email.length > 0 && password.length > 0 && !loading;
