@@ -33,5 +33,15 @@ mutation ImportShare($content: String!) {
       startTz
       endTz
     }
+    metadata {
+      type
+      number
+      reservation
+      seat
+      paymentDetails
+      address
+      departureLocation
+      arrivalLocation
+    }
   }
 }

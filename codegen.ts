@@ -12,29 +12,41 @@ if (!schema) {
 const config: CodegenConfig = {
   overwrite: true,
   schema,
-  documents: ['src/**/*.graphql', 'src/**/*.{ts,tsx}'],
+  documents: [
+    'src/**/*.graphql',
+    'src/**/*.{ts,tsx}',
+    // Our own output embeds every operation as a `gql` template; without this it
+    // would be read back in as a duplicate of each source document.
+    '!src/graphql/__generated__/**',
+  ],
   generates: {
     'src/graphql/__generated__/types.ts': {
-      plugins: [
-        'typescript',
-        'typescript-operations',
-        'typescript-react-apollo',
-      ],
+      // Operation types plus a TypedDocumentNode per operation. Apollo Client
+      // v4's own hooks infer result and variable types straight off those
+      // documents — `useQuery(ElementDetailDocument, ...)` — so there are no
+      // generated hooks and nothing to hand-patch after a regen.
+      //
+      // Deliberately NOT using typescript-react-apollo (its generated hooks are
+      // Apollo v3-shaped and it peers at graphql <=16) or the `typescript`
+      // plugin (typescript-operations already emits the schema types our
+      // operations use; running both emits each one twice).
+      plugins: ['typescript-operations', 'typed-document-node'],
       config: {
-        withHooks: true,
-        // NOTE: @graphql-codegen/typescript-react-apollo has no Apollo Client
-        // v4 support (latest is 4.x, still v3-oriented). After regenerating,
-        // the output needs manual fixups to compile against @apollo/client v4:
-        //   - `import * as Apollo from '@apollo/client'` -> '@apollo/client/react'
-        //   - `Apollo.MutationFunction` -> `Apollo.useMutation.MutationFunction`
-        //   - `Apollo.BaseMutationOptions` -> `Apollo.MutationHookOptions`
-        //   - the generated *SuspenseQuery hooks need a "ts-ignore" directive (unused here)
-        // Longer term, migrate to @graphql-codegen/client-preset.
-        reactApolloVersion: 3,
+        // Keep documents as readable SDL template literals rather than inlining
+        // a parsed AST, so the generated file stays diffable.
+        documentMode: 'graphQLTag',
+        documentNodeImport: '@apollo/client#TypedDocumentNode',
+        gqlImport: '@apollo/client#gql',
+        // Note: these types carry no `__typename` (the plugin only emits it for
+        // selections that ask for it). Apollo still adds it on the wire and
+        // keys its cache off it — that's runtime behaviour, unaffected here.
         scalars: {
           // Map GraphQL scalars to TS types as you add them in the schema.
-          // ID: 'string',
-          // DateTime: 'string',
+          // All three arrive over the wire as ISO8601 strings; without this the
+          // plugin types them `unknown`, which no call site can use.
+          Date: 'string',
+          Time: 'string',
+          DateTime: 'string',
         },
       },
     },

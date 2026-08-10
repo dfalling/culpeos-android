@@ -1,3 +1,4 @@
+import {useQuery} from '@apollo/client/react';
 import {
   Camera,
   type CameraRef,
@@ -24,10 +25,9 @@ import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {AccountMenu} from '../account/AccountMenu';
 import {
+  ElementsDocument,
   type ElementsQuery,
   type ElementsQueryVariables,
-  LabelMatchMode,
-  useElementsQuery,
 } from '../graphql/__generated__/types';
 import type {
   RootStackNavigation,
@@ -231,9 +231,9 @@ export function MapScreen() {
   // Label filters apply on top of either mode below, narrowing the server-side
   // result. When none are active the vars are omitted so the query is unchanged.
   const labelVars = useMemo(
-    () =>
+    (): Pick<ElementsQueryVariables, 'labels' | 'labelsMatch'> | undefined =>
       labelFilters.length > 0
-        ? {labels: labelFilters, labelsMatch: LabelMatchMode.All}
+        ? {labels: labelFilters, labelsMatch: 'ALL'}
         : undefined,
     [labelFilters],
   );
@@ -242,7 +242,8 @@ export function MapScreen() {
   // elements; otherwise fetch by viewport bounds. Reusing the single hook keeps
   // the element shape (and Apollo cache) identical across modes. Label filters
   // (if any) are layered onto whichever mode is active.
-  const {data, loading: elementsLoading} = useElementsQuery(
+  const {data, loading: elementsLoading} = useQuery(
+    ElementsDocument,
     tripFilter
       ? {variables: {tripId: tripFilter.id, ...labelVars}}
       : {skip: !bounds, variables: bounds ? {bounds, ...labelVars} : undefined},

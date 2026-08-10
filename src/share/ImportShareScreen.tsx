@@ -1,3 +1,4 @@
+import {useMutation} from '@apollo/client/react';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
@@ -8,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {useImportShareMutation} from '../graphql/__generated__/types';
+import {ImportShareDocument} from '../graphql/__generated__/types';
 import type {RootStackParamList} from '../navigation/types';
 import type {Theme} from '../theme/colors';
 import {useTheme} from '../theme/useTheme';
@@ -27,7 +28,7 @@ export function ImportShareScreen({route, navigation}: Props) {
   const theme = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const insets = useSafeAreaInsets();
-  const [importShare] = useImportShareMutation();
+  const [importShare] = useMutation(ImportShareDocument);
   const [failed, setFailed] = useState(false);
   // Guards against React's dev-mode double-invoked effect firing the mutation twice.
   const inFlight = useRef(false);

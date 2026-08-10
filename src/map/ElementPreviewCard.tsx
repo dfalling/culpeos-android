@@ -1,6 +1,7 @@
+import {useQuery} from '@apollo/client/react';
 import {useMemo} from 'react';
 import {Pressable, StyleSheet, Text, View} from 'react-native';
-import {useElementDetailQuery} from '../graphql/__generated__/types';
+import {ElementDetailDocument} from '../graphql/__generated__/types';
 import type {Theme} from '../theme/colors';
 import {useTheme} from '../theme/useTheme';
 
@@ -19,7 +20,9 @@ export function ElementPreviewCard({
 }: Props) {
   const theme = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
-  const {data, loading} = useElementDetailQuery({variables: {id: elementId}});
+  const {data, loading} = useQuery(ElementDetailDocument, {
+    variables: {id: elementId},
+  });
   const element = data?.element;
 
   return (
