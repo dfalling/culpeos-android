@@ -33,5 +33,15 @@ query ElementDetail($id: String!) {
       startTz
       endTz
     }
+    metadata {
+      type
+      number
+      reservation
+      seat
+      paymentDetails
+      address
+      departureLocation
+      arrivalLocation
+    }
   }
 }

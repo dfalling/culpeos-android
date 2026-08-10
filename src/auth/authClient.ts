@@ -16,7 +16,6 @@ import {config} from '../config';
 import {
   type LoginMutation,
   LogoutDocument,
-  type LogoutMutation,
   RenewTokenDocument,
   type RenewTokenMutation,
 } from '../graphql/__generated__/types';
@@ -74,7 +73,7 @@ async function doRefresh(): Promise<AuthState | null> {
   if (!current) return null;
 
   try {
-    const result = await apolloClient.mutate<RenewTokenMutation>({
+    const result = await apolloClient.mutate({
       mutation: RenewTokenDocument,
       variables: {input: {refreshToken: current.refreshToken}},
       // Don't read or write the cache for this housekeeping mutation.
@@ -211,7 +210,7 @@ export async function logout(): Promise<void> {
   const current = tokenStore.get();
   if (current) {
     try {
-      await apolloClient.mutate<LogoutMutation>({
+      await apolloClient.mutate({
         mutation: LogoutDocument,
         variables: {input: {refreshToken: current.refreshToken}},
         fetchPolicy: 'no-cache',

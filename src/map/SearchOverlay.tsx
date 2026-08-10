@@ -1,3 +1,4 @@
+import {useLazyQuery} from '@apollo/client/react';
 import {useCallback, useMemo, useRef, useState} from 'react';
 import {
   ActivityIndicator,
@@ -9,10 +10,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import {
-  type SearchQuery,
-  useSearchLazyQuery,
-} from '../graphql/__generated__/types';
+import {SearchDocument, type SearchQuery} from '../graphql/__generated__/types';
 import type {Theme} from '../theme/colors';
 import {useTheme} from '../theme/useTheme';
 
@@ -46,7 +44,7 @@ export function SearchOverlay({
   const [text, setText] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const inputRef = useRef<TextInput>(null);
-  const [runSearch, {data, loading}] = useSearchLazyQuery({
+  const [runSearch, {data, loading}] = useLazyQuery(SearchDocument, {
     fetchPolicy: 'network-only',
   });
 

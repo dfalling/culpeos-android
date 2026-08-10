@@ -4,14 +4,15 @@ Android-only React Native app, distributed via GitHub Releases for installation 
 [Obtainium](https://github.com/ImranR98/Obtainium). Targets GrapheneOS and stock Android;
 intentionally avoids Google Play Services, Firebase, and Play Integrity.
 
-Connects to an Elixir/Phoenix GraphQL API. Types and hooks are code-generated from the
-schema with [`graphql-codegen`](https://the-guild.dev/graphql/codegen) + Apollo Client.
+Connects to an Elixir/Phoenix GraphQL API. Operation types and typed documents are
+code-generated from the schema with [`graphql-codegen`](https://the-guild.dev/graphql/codegen)
+and used with Apollo Client's own hooks.
 
 ## Stack
 
 - React Native 0.85 (bare, TypeScript, no Expo)
-- Apollo Client 3 + `@apollo/client`
-- `@graphql-codegen/cli` with `typescript`, `typescript-operations`, `typescript-react-apollo`
+- Apollo Client 4 (`@apollo/client`)
+- `@graphql-codegen/cli` with `typescript-operations` + `typed-document-node`
 - Package manager: **bun** (lockfile: `bun.lock`). Node is still required at runtime — Metro and Gradle's react.gradle plugin invoke `node` directly.
 - Linter + formatter: **biome** (`biome.json`) — single tool, replaces eslint + prettier
 - Toolchain pinned via [mise](https://mise.jdx.dev) (`mise.toml`): Node 22, Bun 1.2, JDK 17 (Zulu)
@@ -159,17 +160,24 @@ Output: `src/graphql/__generated__/types.ts` — committed to the repo. CI
 doesn't run codegen (no schema in CI), so remember to regenerate and commit
 after editing a `.graphql` file.
 
-Example of using a generated hook:
+Codegen emits a `TypedDocumentNode` per operation (plus its result/variable
+types) — not hooks. Pass the document to Apollo's own hook and both the result
+and the variables are inferred from it:
 
 ```tsx
-import { usePingQuery } from './src/graphql/__generated__/types';
+import { useQuery } from '@apollo/client/react';
+import { PingDocument } from './src/graphql/__generated__/types';
 
 function Ping() {
-  const { data, loading } = usePingQuery();
+  const { data, loading } = useQuery(PingDocument);
   if (loading) return <Text>…</Text>;
   return <Text>{data?.ping}</Text>;
 }
 ```
+
+`useMutation(SomeDocument)` and `useLazyQuery(SomeDocument)` work the same way.
+Deliberately no `typescript-react-apollo`: its generated hooks are Apollo v3-shaped
+and it pins `graphql` to <=16.
 
 ## Releasing (signed APK to GitHub Releases)
 
