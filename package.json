@@ -30,9 +30,9 @@
     "rn-emoji-keyboard": "^1.7.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.25.2",
-    "@babel/preset-env": "^7.25.3",
-    "@babel/runtime": "^7.25.0",
+    "@babel/core": "^8.0.0",
+    "@babel/preset-env": "^8.0.0",
+    "@babel/runtime": "^8.0.0",
     "@biomejs/biome": "^2.4.15",
     "@graphql-codegen/cli": "^7.2.0",
     "@graphql-codegen/introspection": "^6.0.0",
