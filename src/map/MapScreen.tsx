@@ -518,6 +518,12 @@ export function MapScreen() {
         ref={mapRef}
         mapStyle={theme.mapStyleUrl}
         style={styles.map}
+        // Left unset, the compass isn't just off — the native view keeps
+        // MapLibre's own default, which is *on* and merely faded out while the
+        // map faces north. Devices that skip that fade animation draw it for
+        // real, as a disc over the top-right corner. We never rotate the map,
+        // so turn it off explicitly.
+        compass={false}
         onPress={() => setSelectedElementId(null)}
         onRegionDidChange={onRegionDidChange}>
         <Camera ref={cameraRef} initialViewState={initialViewState} />
