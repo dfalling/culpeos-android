@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  type TextInputInstance,
   View,
 } from 'react-native';
 import {SearchDocument, type SearchQuery} from '../graphql/__generated__/types';
@@ -43,7 +44,7 @@ export function SearchOverlay({
   const [expanded, setExpanded] = useState(false);
   const [text, setText] = useState('');
   const [submitted, setSubmitted] = useState(false);
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<TextInputInstance>(null);
   const [runSearch, {data, loading}] = useLazyQuery(SearchDocument, {
     fetchPolicy: 'network-only',
   });

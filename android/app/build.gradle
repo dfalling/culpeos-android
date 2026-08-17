@@ -115,7 +115,10 @@ android {
             signingConfig hasReleaseKeystore ? signingConfigs.release : signingConfigs.debug
             minifyEnabled enableProguardInReleaseBuilds
             shrinkResources enableProguardInReleaseBuilds
-            proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+            // AGP 9 rejects "proguard-android.txt": it carries `-dontoptimize`, which
+            // suppresses most R8 optimization. The "-optimize" variant is the only
+            // default it still accepts.
+            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
         }
     }
 }

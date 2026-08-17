@@ -1,7 +1,19 @@
 {
   "extends": "@react-native/typescript-config",
   "compilerOptions": {
-    "types": ["jest"]
+    "types": ["jest"],
+    "paths": {
+      // react-native-view-shot's "react-native" export condition points at its
+      // raw `src/*.tsx`, so tsc typechecks the library itself — and 5.1.1 still
+      // types host refs as `View` and deep-imports `Libraries/Types/CodegenTypes`,
+      // both of which RN 0.87 removed. Point tsc at the published declarations
+      // instead: they describe the same API, and `skipLibCheck` skips their
+      // internals. Metro still bundles from `src/`, so runtime is unchanged.
+      // Drop this once view-shot ships RN 0.87 support.
+      "react-native-view-shot": [
+        "./node_modules/react-native-view-shot/lib/index.d.ts"
+      ]
+    }
   },
   "include": ["**/*.ts", "**/*.tsx"],
   "exclude": ["**/node_modules", "**/Pods", "codegen.ts"]
