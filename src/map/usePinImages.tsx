@@ -1,6 +1,6 @@
 import type {ImageEntry} from '@maplibre/maplibre-react-native';
 import {type ReactElement, useCallback, useMemo, useRef, useState} from 'react';
-import {PixelRatio, StyleSheet, View} from 'react-native';
+import {PixelRatio, StyleSheet, View, type ViewInstance} from 'react-native';
 import {captureRef} from 'react-native-view-shot';
 import type {Theme} from '../theme/colors';
 import {PIN_SELECTED_SCALE, PinIcon} from './PinIcon';
@@ -45,7 +45,7 @@ export function usePinImages(
   // derived from `images` so a capture in flight isn't started twice and a
   // failed one isn't retried forever.
   const attempted = useRef(new Set<string>());
-  const hosts = useRef(new Map<string, View | null>());
+  const hosts = useRef(new Map<string, ViewInstance | null>());
 
   // A rasterised pin bakes in the colours it was drawn with, so those are part
   // of its name: switching appearance changes both, and the new pins get new
