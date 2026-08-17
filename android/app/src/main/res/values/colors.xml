@@ -1,4 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  The light half of the culpeo palette, mirroring src/theme/colors.ts.
+
+  Android supplies its own colors to things JS never touches — the text caret
+  and selection handles, switch and checkbox tints, ripples, and the window
+  behind the app before React Native has drawn anything. Left alone those come
+  from the Material theme and are blue. Only the roles the platform actually
+  reads are declared here; everything else lives in the TypeScript palette,
+  which stays the single source for the app's own UI.
+
+  values-night/colors.xml holds the dark values under the same names.
+-->
 <resources>
-    <color name="ic_launcher_background">#2A2A2E</color>
+    <color name="canvas">#faf8f5</color>
+    <color name="ink">#221f1d</color>
+    <color name="accent">#a8623d</color>
+    <!-- `line` at 30%, matching the lineFillStrong token used for pressed
+         states in JS, so a native ripple lands at the same weight. -->
+    <color name="control_highlight">#4d8c8478</color>
+
+    <!-- Warm near-black, so the fox reads against it and the icon doesn't sit
+         at the cool hue the rest of the palette moved away from. -->
+    <color name="ic_launcher_background">#1a1817</color>
 </resources>

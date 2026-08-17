@@ -122,8 +122,11 @@ function ModalContents({
                 <Text style={styles.subtitle}>{element.location.address}</Text>
               ) : null}
               {element.completed ? (
+                // Neutral, with a tick doing the work the green used to: status
+                // is carried by icon and copy, not hue. `danger` is the app's
+                // only status color, and this isn't one.
                 <View style={styles.completedTag}>
-                  <Text style={styles.completedTagText}>Completed</Text>
+                  <Text style={styles.completedTagText}>✓ Completed</Text>
                 </View>
               ) : null}
             </View>
@@ -232,7 +235,7 @@ function ModalContents({
         </ScrollView>
       ) : (
         <View style={styles.loadingPane}>
-          {loading ? <ActivityIndicator /> : null}
+          {loading ? <ActivityIndicator color={theme.muted} /> : null}
         </View>
       )}
 
@@ -273,19 +276,22 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     screen: {
       flex: 1,
-      backgroundColor: theme.background,
+      backgroundColor: theme.canvas,
     },
     container: {
       flex: 1,
-      backgroundColor: theme.background,
+      backgroundColor: theme.canvas,
     },
+    // Canvas plus a bottom rule, not a filled slab: the screen measures one
+    // background value end to end. A full point rather than a hairline, which
+    // at low brightness or through a screen protector barely renders.
     header: {
       flexDirection: 'row',
       alignItems: 'center',
       paddingHorizontal: 16,
       paddingBottom: 12,
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: theme.border,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.line,
     },
     closeButton: {
       width: 32,
@@ -293,19 +299,19 @@ const makeStyles = (theme: Theme) =>
       borderRadius: 16,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: theme.surfaceMuted,
+      backgroundColor: theme.lineFill,
       marginRight: 12,
     },
     closeIcon: {
       fontSize: 20,
       lineHeight: 22,
-      color: theme.textPrimary,
+      color: theme.ink,
     },
     headerTitle: {
       flex: 1,
       fontSize: 16,
       fontWeight: '600',
-      color: theme.textPrimary,
+      color: theme.ink,
     },
     editButton: {
       marginLeft: 12,
@@ -313,7 +319,7 @@ const makeStyles = (theme: Theme) =>
     },
     editButtonText: {
       fontSize: 16,
-      color: theme.action,
+      color: theme.accentText,
       fontWeight: '600',
     },
     scrollContent: {
@@ -336,17 +342,19 @@ const makeStyles = (theme: Theme) =>
     },
     subtitle: {
       fontSize: 13,
-      color: theme.textSecondary,
+      color: theme.muted,
     },
     completedTag: {
       alignSelf: 'flex-start',
-      backgroundColor: theme.successMuted,
+      backgroundColor: theme.lineFill,
       paddingHorizontal: 8,
       paddingVertical: 3,
       borderRadius: 10,
     },
     completedTagText: {
-      color: theme.success,
+      // `ink`, not `muted`: muted on a lineFill sits at 4.04:1 in light mode,
+      // under the 4.5:1 bar for text this size.
+      color: theme.ink,
       fontSize: 11,
       fontWeight: '600',
     },
@@ -358,7 +366,7 @@ const makeStyles = (theme: Theme) =>
       width: 200,
       height: 140,
       borderRadius: 10,
-      backgroundColor: theme.surfaceMuted,
+      backgroundColor: theme.lineFill,
     },
     photoPressed: {
       opacity: 0.7,
@@ -369,7 +377,7 @@ const makeStyles = (theme: Theme) =>
     sectionTitle: {
       fontSize: 12,
       fontWeight: '700',
-      color: theme.textTertiary,
+      color: theme.muted,
       textTransform: 'uppercase',
       letterSpacing: 0.5,
       marginBottom: 6,
@@ -377,12 +385,15 @@ const makeStyles = (theme: Theme) =>
     body: {
       fontSize: 15,
       lineHeight: 21,
-      color: theme.textPrimary,
+      color: theme.ink,
     },
+    // Prose links carry a standing underline, so they don't rely on hue alone.
     link: {
       fontSize: 15,
       lineHeight: 21,
-      color: theme.accent,
+      color: theme.accentText,
+      textDecorationLine: 'underline',
+      textDecorationColor: theme.accentText,
     },
     bookingRows: {
       gap: 10,
@@ -398,7 +409,7 @@ const makeStyles = (theme: Theme) =>
       width: 84,
       fontSize: 13,
       lineHeight: 21,
-      color: theme.textSecondary,
+      color: theme.muted,
     },
     bookingValue: {
       flex: 1,
@@ -411,17 +422,18 @@ const makeStyles = (theme: Theme) =>
       flexWrap: 'wrap',
       gap: 6,
     },
+    // A category label, so neutral — the wording is the label.
     labelChip: {
-      backgroundColor: theme.accentMuted,
+      backgroundColor: theme.lineFill,
       paddingHorizontal: 10,
       paddingVertical: 5,
       borderRadius: 12,
     },
     labelChipPressed: {
-      backgroundColor: theme.border,
+      backgroundColor: theme.lineFillStrong,
     },
     labelChipText: {
-      color: theme.accent,
+      color: theme.ink,
       fontSize: 12,
       fontWeight: '500',
     },

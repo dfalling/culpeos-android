@@ -67,7 +67,9 @@ const makeStyles = (theme: Theme) =>
       position: 'absolute',
       left: 12,
       right: 12,
-      backgroundColor: theme.card,
+      backgroundColor: theme.surface,
+      borderWidth: 1,
+      borderColor: theme.line,
       borderRadius: 12,
       padding: 12,
       flexDirection: 'row',
@@ -92,16 +94,16 @@ const makeStyles = (theme: Theme) =>
     title: {
       fontSize: 16,
       fontWeight: '600',
-      color: theme.textPrimary,
+      color: theme.ink,
     },
     subtitle: {
       fontSize: 12,
-      color: theme.textSecondary,
+      color: theme.muted,
       marginTop: 2,
     },
     description: {
       fontSize: 13,
-      color: theme.textSecondary,
+      color: theme.muted,
       marginTop: 4,
     },
     closeButton: {
@@ -110,11 +112,11 @@ const makeStyles = (theme: Theme) =>
       borderRadius: 16,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: theme.surfaceMuted,
+      backgroundColor: theme.lineFill,
     },
     closeIcon: {
       fontSize: 20,
       lineHeight: 22,
-      color: theme.textSecondary,
+      color: theme.ink,
     },
   });

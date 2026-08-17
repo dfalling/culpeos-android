@@ -383,9 +383,14 @@ export function PhotoViewer({uri, description, onClose}: Props) {
   );
 }
 
-// Not themed: a photo viewer is black in both appearances, so the image sets
-// the mood and its edges are unambiguous. The chrome is therefore fixed to
-// translucent white rather than reading from the theme.
+// Deliberately literal, and the only place in the app that is. Text and chrome
+// over photography can't be checked against a token — the backdrop changes
+// pixel to pixel — and shouldn't follow the color scheme either: a photo viewer
+// is black in both appearances so the image sets the mood and its edges stay
+// unambiguous. Hence fixed white on fixed black rather than ink on canvas.
+//
+// Leave these alone in any palette sweep. An accent here would do no work: over
+// a photo it can't read as interactive, it just reads as dim.
 const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFill,
