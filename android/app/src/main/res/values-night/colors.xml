@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The dark half of the palette. Same names as values/colors.xml, so nothing
+  that reads them has to branch on the appearance — the resource system picks
+  the right one, which is the platform's version of one declaration per role.
+
+  ic_launcher_background isn't redeclared: a launcher icon is drawn by the
+  launcher, not the app, and has one appearance.
+-->
+<resources>
+    <color name="canvas">#1a1817</color>
+    <color name="ink">#ebe7e2</color>
+    <color name="accent">#c47a52</color>
+    <color name="control_highlight">#4d3a3532</color>
+</resources>

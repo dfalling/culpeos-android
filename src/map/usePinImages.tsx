@@ -48,10 +48,9 @@ export function usePinImages(
   const hosts = useRef(new Map<string, View | null>());
 
   // A rasterised pin bakes in the colours it was drawn with, so those are part
-  // of its name: should the palette ever stop being shared between light and
-  // dark, the new pins get new names and are captured afresh rather than
-  // quietly keeping the old bitmaps.
-  const variant = `${theme.pin}|${theme.pinBorder}`;
+  // of its name: switching appearance changes both, and the new pins get new
+  // names and are captured afresh rather than quietly keeping the old bitmaps.
+  const variant = `${theme.accent}|${theme.ink}`;
   const nameFor = useCallback(
     (icon: string | null | undefined) => `pin:${variant}:${icon ?? ''}`,
     [variant],

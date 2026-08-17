@@ -104,11 +104,17 @@ const makeStyles = (theme: Theme) =>
       justifyContent: 'center',
       gap: 8,
     },
+    // Neutral, deliberately. These sit over the map, and an accent-filled chrome
+    // element competes with the accent pins it's filtering — content should win.
+    // A pill is only on screen while its filter is active, so its presence is
+    // already the "on" state; it doesn't need a hue to say so as well.
     pill: {
       flexDirection: 'row',
       alignItems: 'center',
       maxWidth: '100%',
-      backgroundColor: theme.card,
+      backgroundColor: theme.surface,
+      borderWidth: 1,
+      borderColor: theme.line,
       borderRadius: 20,
       paddingLeft: 14,
       paddingRight: 6,
@@ -128,7 +134,7 @@ const makeStyles = (theme: Theme) =>
       flexShrink: 1,
       fontSize: 14,
       fontWeight: '600',
-      color: theme.accent,
+      color: theme.ink,
     },
     clearButton: {
       width: 24,
@@ -137,10 +143,10 @@ const makeStyles = (theme: Theme) =>
       alignItems: 'center',
       justifyContent: 'center',
       marginLeft: 8,
-      backgroundColor: theme.accentMuted,
+      backgroundColor: theme.lineFill,
     },
     clearIcon: {
-      color: theme.accent,
+      color: theme.ink,
       fontSize: 16,
       lineHeight: 18,
     },

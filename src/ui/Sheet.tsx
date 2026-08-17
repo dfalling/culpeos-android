@@ -102,8 +102,12 @@ const makeStyles = (theme: Theme) =>
       right: 0,
       bottom: 0,
     },
+    // Genuinely raised, so genuinely a surface: rounded, over a scrim, with a
+    // `line` ring to hold its top edge in dark mode where the shadow can't.
     card: {
-      backgroundColor: theme.card,
+      backgroundColor: theme.surface,
+      borderTopWidth: 1,
+      borderTopColor: theme.line,
       borderTopLeftRadius: 16,
       borderTopRightRadius: 16,
       paddingTop: 20,
