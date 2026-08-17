@@ -7,8 +7,12 @@ import type {Theme} from '../theme/colors';
 // Web draws it at 30px; we size up for touch. Exported for `pinHitTest`, which
 // measures taps against the shape these describe.
 export const PIN_SIZE = 36;
-// Selected pins only grow (and draw on top); the fill stays red, as on web.
+// Selected pins only grow (and draw on top); the fill stays accent, as on web.
 export const PIN_SELECTED_SCALE = 1.25;
+// Border weight. Web went 1px → 2px because a hairline smears or vanishes on an
+// e-ink refresh; the mobile equivalent is a hairline at low brightness or
+// through a screen protector. Scaled with the pin so it holds at capture size.
+const PIN_BORDER = 2;
 // Rotating the square makes it occupy a box of side × √2, with the square
 // corner — the teardrop's tip — landing at the bottom centre of that box.
 export const PIN_DIAGONAL = PIN_SIZE * Math.SQRT2;
@@ -64,9 +68,14 @@ const makeStyles = (theme: Theme, scale: number) =>
       borderTopRightRadius: (PIN_SIZE / 2) * scale,
       borderBottomRightRadius: (PIN_SIZE / 2) * scale,
       borderBottomLeftRadius: 0,
-      backgroundColor: theme.pin,
-      borderWidth: scale,
-      borderColor: theme.pinBorder,
+      // A saved location is a solid accent fill with an ink border — one of the
+      // four sanctioned uses of accent, and the heaviest mark on the map. The
+      // weight, not the hue, is what separates it from everything else: a
+      // distinction by hue alone disappears under a color vision deficiency or
+      // on a grayscale screen.
+      backgroundColor: theme.accent,
+      borderWidth: PIN_BORDER * scale,
+      borderColor: theme.ink,
       alignItems: 'center',
       justifyContent: 'center',
       boxShadow: [

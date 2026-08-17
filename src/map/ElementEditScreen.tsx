@@ -12,7 +12,6 @@ import {
   StyleSheet,
   Switch,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -30,7 +29,9 @@ import {photoImageSource} from '../photos/photoImageSource';
 import {usePhotoUploader} from '../photos/photoUpload';
 import type {Theme} from '../theme/colors';
 import {useTheme} from '../theme/useTheme';
+import {emojiPickerTheme} from '../ui/emojiPickerTheme';
 import {Sheet} from '../ui/Sheet';
+import {TextField} from '../ui/TextField';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ElementEdit'>;
 
@@ -67,7 +68,7 @@ export function ElementEditScreen({route, navigation}: Props) {
         />
       ) : (
         <View style={styles.loadingPane}>
-          {loading ? <ActivityIndicator /> : null}
+          {loading ? <ActivityIndicator color={theme.muted} /> : null}
         </View>
       )}
     </View>
@@ -91,6 +92,7 @@ function EditForm({
 }) {
   const theme = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
+  const pickerTheme = useMemo(() => emojiPickerTheme(theme), [theme]);
   const safeAreaInsets = useSafeAreaInsets();
   const [name, setName] = useState(element.name);
   const [uri, setUri] = useState(element.uri);
@@ -272,7 +274,7 @@ function EditForm({
           disabled={!canSave}
           style={styles.headerButton}>
           {saving ? (
-            <ActivityIndicator />
+            <ActivityIndicator color={theme.muted} />
           ) : (
             <Text
               style={[
@@ -293,8 +295,7 @@ function EditForm({
         ]}
         keyboardShouldPersistTaps="handled">
         <Field label="Name">
-          <TextInput
-            style={styles.input}
+          <TextField
             value={name}
             onChangeText={setName}
             placeholder="Name"
@@ -318,8 +319,7 @@ function EditForm({
         </Field>
 
         <Field label="URL">
-          <TextInput
-            style={styles.input}
+          <TextField
             value={uri}
             onChangeText={setUri}
             placeholder="https://example.com"
@@ -327,16 +327,26 @@ function EditForm({
             autoCorrect={false}
             keyboardType="url"
             editable={!saving}
+            invalid={uriError != null}
           />
           {uriError ? <Text style={styles.error}>{uriError}</Text> : null}
         </Field>
 
         <View style={styles.switchRow}>
           <Text style={styles.fieldLabel}>Completed</Text>
+          {/*
+            Android tints a switch from the Material theme's colorPrimary, not
+            from ours, so both states are set explicitly. On is a solid mid-tone
+            against a translucent off — the same fill-weight cue the map pins
+            use, which survives desaturation. Deliberately not accent: several
+            switched-on controls would out-shout the pins.
+          */}
           <Switch
             value={completed}
             onValueChange={setCompleted}
             disabled={saving}
+            trackColor={{false: theme.lineFillStrong, true: theme.muted}}
+            thumbColor={theme.surface}
           />
         </View>
 
@@ -366,7 +376,7 @@ function EditForm({
               onPress={onAddPhoto}
               style={styles.photoAdd}>
               {uploading ? (
-                <ActivityIndicator />
+                <ActivityIndicator color={theme.muted} />
               ) : (
                 <Text style={styles.photoAddIcon}>＋</Text>
               )}
@@ -375,8 +385,8 @@ function EditForm({
         </Field>
 
         <Field label="Description">
-          <TextInput
-            style={[styles.input, styles.multiline]}
+          <TextField
+            style={styles.multiline}
             value={description}
             onChangeText={setDescription}
             placeholder="Description"
@@ -432,8 +442,8 @@ function EditForm({
             </View>
           ) : null}
           <View style={styles.labelInputRow}>
-            <TextInput
-              style={[styles.input, styles.flex]}
+            <TextField
+              containerStyle={styles.flex}
               value={labelDraft}
               onChangeText={setLabelDraft}
               placeholder="Add a label"
@@ -468,7 +478,7 @@ function EditForm({
           disabled={busy}
           style={[styles.deleteButton, busy && styles.deleteButtonDisabled]}>
           {deleting ? (
-            <ActivityIndicator color={theme.error} />
+            <ActivityIndicator color={theme.danger} />
           ) : (
             <Text style={styles.deleteButtonText}>Delete element</Text>
           )}
@@ -479,6 +489,7 @@ function EditForm({
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
         onEmojiSelected={emoji => setIcon(emoji.emoji)}
+        theme={pickerTheme}
       />
 
       <Sheet
@@ -538,7 +549,7 @@ const makeStyles = (theme: Theme) =>
     flex: {flex: 1},
     screen: {
       flex: 1,
-      backgroundColor: theme.background,
+      backgroundColor: theme.canvas,
     },
     loadingPane: {
       flex: 1,
@@ -550,8 +561,10 @@ const makeStyles = (theme: Theme) =>
       alignItems: 'center',
       paddingHorizontal: 16,
       paddingBottom: 12,
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: theme.border,
+      // Canvas plus a rule, not a filled bar — the screen is one background
+      // value end to end. A full point, since a hairline barely renders.
+      borderBottomWidth: 1,
+      borderBottomColor: theme.line,
     },
     headerButton: {
       minWidth: 56,
@@ -559,17 +572,17 @@ const makeStyles = (theme: Theme) =>
     },
     headerButtonText: {
       fontSize: 16,
-      color: theme.textPrimary,
+      color: theme.ink,
     },
     headerTitle: {
       flex: 1,
       fontSize: 16,
       fontWeight: '600',
-      color: theme.textPrimary,
+      color: theme.ink,
       textAlign: 'center',
     },
     saveText: {
-      color: theme.action,
+      color: theme.accentText,
       fontWeight: '600',
       textAlign: 'right',
     },
@@ -586,25 +599,16 @@ const makeStyles = (theme: Theme) =>
     fieldLabel: {
       fontSize: 12,
       fontWeight: '700',
-      color: theme.textTertiary,
+      color: theme.muted,
       textTransform: 'uppercase',
       letterSpacing: 0.5,
-    },
-    input: {
-      borderWidth: 1,
-      borderColor: theme.border,
-      borderRadius: 8,
-      paddingHorizontal: 12,
-      paddingVertical: 12,
-      fontSize: 16,
-      color: theme.textPrimary,
     },
     iconButton: {
       width: 64,
       height: 64,
       borderRadius: 8,
       borderWidth: 1,
-      borderColor: theme.border,
+      borderColor: theme.lineControl,
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -613,7 +617,7 @@ const makeStyles = (theme: Theme) =>
     },
     iconButtonPlaceholder: {
       fontSize: 28,
-      color: theme.textTertiary,
+      color: theme.muted,
     },
     multiline: {
       minHeight: 120,
@@ -631,7 +635,7 @@ const makeStyles = (theme: Theme) =>
       width: 80,
       height: 80,
       borderRadius: 8,
-      backgroundColor: theme.surfaceMuted,
+      backgroundColor: theme.lineFill,
     },
     photoRemove: {
       position: 'absolute',
@@ -642,12 +646,12 @@ const makeStyles = (theme: Theme) =>
       borderRadius: 11,
       // Inverts against the screen so the badge reads on any photo in either
       // appearance: a dark chip in light mode, a light chip in dark mode.
-      backgroundColor: theme.textPrimary,
+      backgroundColor: theme.ink,
       alignItems: 'center',
       justifyContent: 'center',
     },
     photoRemoveIcon: {
-      color: theme.background,
+      color: theme.canvas,
       fontSize: 16,
       lineHeight: 18,
       fontWeight: '600',
@@ -657,14 +661,14 @@ const makeStyles = (theme: Theme) =>
       height: 80,
       borderRadius: 8,
       borderWidth: 1,
-      borderColor: theme.border,
+      borderColor: theme.lineControl,
       borderStyle: 'dashed',
       alignItems: 'center',
       justifyContent: 'center',
     },
     photoAddIcon: {
       fontSize: 28,
-      color: theme.textTertiary,
+      color: theme.muted,
     },
     switchRow: {
       flexDirection: 'row',
@@ -673,7 +677,7 @@ const makeStyles = (theme: Theme) =>
     },
     tripsSelector: {
       borderWidth: 1,
-      borderColor: theme.border,
+      borderColor: theme.lineControl,
       borderRadius: 8,
       paddingHorizontal: 12,
       paddingVertical: 12,
@@ -682,7 +686,7 @@ const makeStyles = (theme: Theme) =>
     },
     tripsPlaceholder: {
       fontSize: 16,
-      color: theme.textTertiary,
+      color: theme.muted,
     },
     tripPills: {
       flexDirection: 'row',
@@ -693,7 +697,7 @@ const makeStyles = (theme: Theme) =>
       flexDirection: 'row',
       alignItems: 'center',
       maxWidth: '100%',
-      backgroundColor: theme.accentMuted,
+      backgroundColor: theme.lineFill,
       borderRadius: 16,
       paddingHorizontal: 12,
       paddingVertical: 6,
@@ -707,18 +711,18 @@ const makeStyles = (theme: Theme) =>
       flexShrink: 1,
       fontSize: 14,
       fontWeight: '600',
-      color: theme.accent,
+      color: theme.ink,
     },
     sheetTitle: {
       fontSize: 16,
       fontWeight: '600',
-      color: theme.textPrimary,
+      color: theme.ink,
       paddingHorizontal: 12,
       paddingBottom: 8,
     },
     sheetEmpty: {
       fontSize: 14,
-      color: theme.textSecondary,
+      color: theme.muted,
       paddingHorizontal: 12,
       paddingVertical: 12,
     },
@@ -733,7 +737,7 @@ const makeStyles = (theme: Theme) =>
       borderRadius: 8,
     },
     tripRowPressed: {
-      backgroundColor: theme.surfaceMuted,
+      backgroundColor: theme.lineFill,
     },
     tripRowIcon: {
       fontSize: 18,
@@ -743,8 +747,11 @@ const makeStyles = (theme: Theme) =>
     tripRowName: {
       flex: 1,
       fontSize: 16,
-      color: theme.textPrimary,
+      color: theme.ink,
     },
+    // A selected state, which is a sanctioned use of accent. The tick carries
+    // the meaning on its own, so the hue is reinforcement rather than the
+    // only signal.
     tripRowCheck: {
       fontSize: 18,
       fontWeight: '700',
@@ -760,14 +767,14 @@ const makeStyles = (theme: Theme) =>
       flexDirection: 'row',
       alignItems: 'center',
       gap: 4,
-      backgroundColor: theme.accentMuted,
+      backgroundColor: theme.lineFill,
       paddingLeft: 10,
       paddingRight: 6,
       paddingVertical: 5,
       borderRadius: 12,
     },
     labelChipText: {
-      color: theme.accent,
+      color: theme.ink,
       fontSize: 12,
       fontWeight: '500',
     },
@@ -778,7 +785,7 @@ const makeStyles = (theme: Theme) =>
       justifyContent: 'center',
     },
     labelChipRemoveIcon: {
-      color: theme.accent,
+      color: theme.ink,
       fontSize: 16,
       lineHeight: 18,
       fontWeight: '600',
@@ -788,12 +795,14 @@ const makeStyles = (theme: Theme) =>
       alignItems: 'center',
       gap: 8,
     },
+    // A secondary action: a quiet fill with an ink label, rather than a solid
+    // one. A white label on `muted` is only 3.48:1, and flipping the label
+    // doesn't help — `muted` sits mid-scale in both appearances.
     labelAdd: {
       paddingHorizontal: 16,
       paddingVertical: 12,
       borderRadius: 8,
-      borderWidth: 1,
-      borderColor: theme.border,
+      backgroundColor: theme.lineFill,
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -801,12 +810,12 @@ const makeStyles = (theme: Theme) =>
       opacity: 0.4,
     },
     labelAddText: {
-      color: theme.action,
+      color: theme.ink,
       fontSize: 16,
       fontWeight: '600',
     },
     error: {
-      color: theme.error,
+      color: theme.danger,
       fontSize: 14,
     },
     deleteButton: {
@@ -814,7 +823,7 @@ const makeStyles = (theme: Theme) =>
       paddingVertical: 16,
       borderRadius: 8,
       borderWidth: 1,
-      borderColor: theme.error,
+      borderColor: theme.danger,
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -822,7 +831,7 @@ const makeStyles = (theme: Theme) =>
       opacity: 0.4,
     },
     deleteButtonText: {
-      color: theme.error,
+      color: theme.danger,
       fontSize: 16,
       fontWeight: '600',
     },

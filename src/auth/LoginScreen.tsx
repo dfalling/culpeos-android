@@ -7,12 +7,12 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import {LoginDocument} from '../graphql/__generated__/types';
 import type {Theme} from '../theme/colors';
 import {useTheme} from '../theme/useTheme';
+import {TextField} from '../ui/TextField';
 import {clearSecurityWarning, useSecurityWarning} from './authClient';
 import {tokenStore} from './tokenStore';
 
@@ -85,10 +85,8 @@ export function LoginScreen() {
       <View style={styles.container}>
         <Text style={styles.title}>Sign in to Culpeos</Text>
 
-        <TextInput
-          style={styles.input}
+        <TextField
           placeholder="Email"
-          placeholderTextColor={theme.textTertiary}
           autoCapitalize="none"
           autoCorrect={false}
           autoComplete="email"
@@ -97,10 +95,8 @@ export function LoginScreen() {
           onChangeText={setEmail}
           editable={!loading}
         />
-        <TextInput
-          style={styles.input}
+        <TextField
           placeholder="Password"
-          placeholderTextColor={theme.textTertiary}
           autoCapitalize="none"
           autoCorrect={false}
           autoComplete="password"
@@ -126,7 +122,7 @@ export function LoginScreen() {
             pressed && canSubmit && styles.buttonPressed,
           ]}>
           {loading ? (
-            <ActivityIndicator color={theme.onAction} />
+            <ActivityIndicator color={theme.onAccent} />
           ) : (
             <Text style={styles.buttonText}>Log in</Text>
           )}
@@ -138,7 +134,7 @@ export function LoginScreen() {
 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
-    flex: {flex: 1, backgroundColor: theme.background},
+    flex: {flex: 1, backgroundColor: theme.canvas},
     container: {
       flex: 1,
       padding: 24,
@@ -150,30 +146,24 @@ const makeStyles = (theme: Theme) =>
       fontWeight: '600',
       marginBottom: 16,
       textAlign: 'center',
-      color: theme.textPrimary,
-    },
-    input: {
-      borderWidth: 1,
-      borderColor: theme.border,
-      borderRadius: 8,
-      paddingHorizontal: 12,
-      paddingVertical: 12,
-      fontSize: 16,
-      color: theme.textPrimary,
+      color: theme.ink,
     },
     error: {
-      color: theme.error,
+      color: theme.danger,
       fontSize: 14,
       textAlign: 'center',
     },
     warning: {
-      color: theme.error,
+      color: theme.danger,
       fontSize: 13,
       textAlign: 'center',
       fontStyle: 'italic',
     },
+    // The screen's one CTA, so this is where accent is spent. The pressed
+    // state is the fill at 85%, which is what the opacity below amounts to
+    // over the canvas.
     button: {
-      backgroundColor: theme.action,
+      backgroundColor: theme.accent,
       borderRadius: 8,
       paddingVertical: 14,
       alignItems: 'center',
@@ -182,7 +172,7 @@ const makeStyles = (theme: Theme) =>
     buttonDisabled: {opacity: 0.5},
     buttonPressed: {opacity: 0.85},
     buttonText: {
-      color: theme.onAction,
+      color: theme.onAccent,
       fontSize: 16,
       fontWeight: '600',
     },

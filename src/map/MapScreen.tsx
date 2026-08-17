@@ -46,6 +46,7 @@ import {
   type SearchPlace,
   type SearchTrip,
 } from './SearchOverlay';
+import {UserLocationPuck} from './UserLocationPuck';
 import {usePinImages} from './usePinImages';
 import {type Viewport, viewportStore} from './viewportStore';
 
@@ -524,10 +525,20 @@ export function MapScreen() {
         // real, as a disc over the top-right corner. We never rotate the map,
         // so turn it off explicitly.
         compass={false}
+        // The attribution button is the map SDK's own chrome and ships a light
+        // theme; left untinted it's one of the brightest things on a dark
+        // basemap. It stays visible — OpenFreeMap's data requires the credit —
+        // but as ink rather than the SDK's default.
+        tintColor={theme.ink}
         onPress={() => setSelectedElementId(null)}
         onRegionDidChange={onRegionDidChange}>
         <Camera ref={cameraRef} initialViewState={initialViewState} />
-        <UserLocation animated accuracy />
+        <UserLocation animated>
+          <UserLocationPuck
+            theme={theme}
+            accuracy={position?.coords.accuracy ?? undefined}
+          />
+        </UserLocation>
         <Images images={pinImages} />
         <GeoJSONSource
           id={PIN_SOURCE_ID}
@@ -583,18 +594,24 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: theme.background,
+      backgroundColor: theme.canvas,
     },
     map: {
       flex: 1,
     },
+    // Map chrome, not map content: neutral, so it doesn't compete with the
+    // pins it sits over. The ring is `lineControl` because it's the button's
+    // only edge — `surface` is 1.22:1 against the dark basemap and the drop
+    // shadow is black on near-black, so neither one bounds it.
     recenterButton: {
       position: 'absolute',
       right: 16,
       width: 48,
       height: 48,
       borderRadius: 24,
-      backgroundColor: theme.mapButtonBg,
+      backgroundColor: theme.surface,
+      borderWidth: 1,
+      borderColor: theme.lineControl,
       alignItems: 'center',
       justifyContent: 'center',
       shadowColor: '#000',
@@ -606,6 +623,6 @@ const makeStyles = (theme: Theme) =>
     recenterIcon: {
       fontSize: 24,
       lineHeight: 28,
-      color: theme.mapButtonIcon,
+      color: theme.ink,
     },
   });

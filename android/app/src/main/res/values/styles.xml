@@ -1,9 +1,30 @@
 <resources>
 
-    <!-- Base application theme. -->
+    <!--
+      Base application theme.
+
+      The color items here exist because the platform draws several things the
+      JS palette can't reach: the text caret and selection handles, the tint on
+      a native switch or checkbox, touch ripples, and the window itself before
+      React Native has rendered a frame. Every one of those defaults to blue via
+      AppCompat, and no amount of grepping our own source would have turned them
+      up. DayNight resolves each against values-night/ in dark mode.
+    -->
     <style name="AppTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
-        <!-- Customize your theme here. -->
         <item name="android:editTextBackground">@drawable/rn_edit_text_material</item>
+
+        <!-- Selection handles, the caret, and any control that draws itself as
+             "active" — the same sanctioned accent use as a focus ring. -->
+        <item name="colorAccent">@color/accent</item>
+        <item name="colorPrimary">@color/accent</item>
+        <item name="colorPrimaryDark">@color/canvas</item>
+        <item name="colorControlActivated">@color/accent</item>
+        <item name="colorControlNormal">@color/ink</item>
+        <item name="colorControlHighlight">@color/control_highlight</item>
+
+        <!-- Painted before the first JS frame, so a cold start opens on the
+             canvas rather than flashing the platform's white or black. -->
+        <item name="android:windowBackground">@color/canvas</item>
     </style>
 
 </resources>

@@ -6,8 +6,6 @@
 
 import {ApolloProvider} from '@apollo/client/react';
 import {
-  DarkTheme,
-  DefaultTheme,
   NavigationContainer,
   useNavigationContainerRef,
 } from '@react-navigation/native';
@@ -25,6 +23,7 @@ import {
   usePendingShare,
   useShareListener,
 } from './src/share/shareImport';
+import {useNavigationTheme} from './src/theme/navigationTheme';
 import {useTheme} from './src/theme/useTheme';
 
 function App() {
@@ -44,6 +43,7 @@ function App() {
 
 function AppContent() {
   const theme = useTheme();
+  const navigationTheme = useNavigationTheme();
   const hydrated = useAuthHydrated();
   const auth = useAuth();
   const navigationRef = useNavigationContainerRef<RootStackParamList>();
@@ -76,9 +76,9 @@ function AppContent() {
         style={[
           styles.container,
           styles.splash,
-          {backgroundColor: theme.background},
+          {backgroundColor: theme.canvas},
         ]}>
-        <ActivityIndicator />
+        <ActivityIndicator color={theme.muted} />
       </View>
     );
   }
@@ -87,14 +87,14 @@ function AppContent() {
     return <LoginScreen />;
   }
 
-  // Match React Navigation's container background to the active scheme so the
-  // gap shown during the slide transition between screens isn't a white flash
-  // in dark mode.
+  // The navigator's own theme is built from our tokens, so the gap shown during
+  // the slide transition between screens is the canvas rather than React
+  // Navigation's default background.
   return (
     <NavigationContainer
       ref={navigationRef}
       onReady={routePendingShare}
-      theme={theme.scheme === 'dark' ? DarkTheme : DefaultTheme}>
+      theme={navigationTheme}>
       <RootNavigator />
     </NavigationContainer>
   );

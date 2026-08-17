@@ -63,13 +63,18 @@ export function AccountMenu() {
 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
+    // Neutral: an avatar is an identity marker, not an action, and it sits over
+    // the map where an accent fill would pull against the pins. Matches the
+    // search button opposite it — both are map chrome.
     avatarButton: {
       position: 'absolute',
       right: 16,
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: theme.accent,
+      backgroundColor: theme.surface,
+      borderWidth: 1,
+      borderColor: theme.lineControl,
       alignItems: 'center',
       justifyContent: 'center',
       shadowColor: '#000',
@@ -80,13 +85,13 @@ const makeStyles = (theme: Theme) =>
     },
     avatarPressed: {opacity: 0.8},
     avatarText: {
-      color: '#ffffff',
+      color: theme.ink,
       fontSize: 16,
       fontWeight: '600',
     },
     sheetEmail: {
       fontSize: 12,
-      color: theme.textSecondary,
+      color: theme.muted,
       paddingHorizontal: 12,
       paddingBottom: 8,
     },
@@ -96,10 +101,10 @@ const makeStyles = (theme: Theme) =>
       borderRadius: 8,
     },
     sheetItemPressed: {
-      backgroundColor: theme.surfaceMuted,
+      backgroundColor: theme.lineFill,
     },
     sheetItemText: {
       fontSize: 16,
-      color: theme.textPrimary,
+      color: theme.ink,
     },
   });

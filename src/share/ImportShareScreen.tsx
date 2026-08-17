@@ -90,7 +90,7 @@ export function ImportShareScreen({route, navigation}: Props) {
           </>
         ) : (
           <>
-            <ActivityIndicator size="large" color={theme.accent} />
+            <ActivityIndicator size="large" color={theme.muted} />
             <Text style={styles.title}>Saving shared link…</Text>
             <Text style={styles.subtitle} numberOfLines={2}>
               {content}
@@ -106,7 +106,7 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     screen: {
       flex: 1,
-      backgroundColor: theme.background,
+      backgroundColor: theme.canvas,
     },
     closeButton: {
       position: 'absolute',
@@ -116,13 +116,13 @@ const makeStyles = (theme: Theme) =>
       borderRadius: 16,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: theme.surfaceMuted,
+      backgroundColor: theme.lineFill,
       zIndex: 1,
     },
     closeIcon: {
       fontSize: 20,
       lineHeight: 22,
-      color: theme.textPrimary,
+      color: theme.ink,
     },
     center: {
       flex: 1,
@@ -134,33 +134,34 @@ const makeStyles = (theme: Theme) =>
     title: {
       fontSize: 18,
       fontWeight: '600',
-      color: theme.textPrimary,
+      color: theme.ink,
       textAlign: 'center',
     },
     subtitle: {
       fontSize: 14,
       lineHeight: 20,
-      color: theme.textSecondary,
+      color: theme.muted,
       textAlign: 'center',
     },
+    // The screen's one CTA — the other action is a plain text Cancel.
     retryButton: {
       marginTop: 8,
       paddingHorizontal: 24,
       paddingVertical: 12,
       borderRadius: 24,
-      backgroundColor: theme.action,
+      backgroundColor: theme.accent,
     },
     retryButtonPressed: {
       opacity: 0.85,
     },
     retryText: {
-      color: theme.onAction,
+      color: theme.onAccent,
       fontSize: 15,
       fontWeight: '600',
     },
     cancelText: {
       marginTop: 4,
-      color: theme.textSecondary,
+      color: theme.muted,
       fontSize: 14,
     },
   });

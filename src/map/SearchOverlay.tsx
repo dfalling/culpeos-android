@@ -116,7 +116,14 @@ export function SearchOverlay({
             onChangeText={setText}
             onSubmitEditing={submit}
             placeholder="Search elements, trips, places"
-            placeholderTextColor={theme.textTertiary}
+            // Not a `TextField`: this one has no border of its own — the pill
+            // around it is the field — so there's no rest/focus border to move,
+            // and it's autofocused the moment it appears. It still needs the
+            // caret and selection colors Android would otherwise theme itself.
+            placeholderTextColor={theme.muted}
+            cursorColor={theme.accent}
+            selectionColor={theme.accentRing}
+            selectionHandleColor={theme.accent}
             returnKeyType="search"
             style={styles.input}
           />
@@ -136,7 +143,7 @@ export function SearchOverlay({
           <View style={styles.resultsCard}>
             {loading ? (
               <View style={styles.statusPane}>
-                <ActivityIndicator />
+                <ActivityIndicator color={theme.muted} />
               </View>
             ) : hasResults ? (
               <ScrollView
@@ -148,7 +155,6 @@ export function SearchOverlay({
                       <ResultRow
                         key={el.id}
                         glyph={el.icon || '📍'}
-                        glyphStyle={styles.elementGlyphWrap}
                         title={el.name}
                         subtitle={el.location?.address ?? undefined}
                         accessibilityLabel={`Go to element ${el.name}`}
@@ -167,7 +173,6 @@ export function SearchOverlay({
                       <ResultRow
                         key={trip.id}
                         glyph={trip.icon || '🗺️'}
-                        glyphStyle={styles.tripGlyphWrap}
                         title={trip.name}
                         subtitle={trip.description || undefined}
                         badge="Trip"
@@ -187,7 +192,6 @@ export function SearchOverlay({
                       <ResultRow
                         key={place.placeId}
                         glyph="📍"
-                        glyphStyle={styles.placeGlyphWrap}
                         title={place.name}
                         subtitle={place.address}
                         accessibilityLabel={`Go to place ${place.name}`}
@@ -229,9 +233,14 @@ function Section({
   );
 }
 
+/**
+ * One search result. The three result kinds share a single neutral treatment:
+ * they used to be told apart by the hue behind the glyph — accent, purple, grey
+ * — which is a distinction nobody with a color vision deficiency could make,
+ * and the section headings above them already say which is which.
+ */
 function ResultRow({
   glyph,
-  glyphStyle,
   title,
   subtitle,
   badge,
@@ -239,7 +248,6 @@ function ResultRow({
   onPress,
 }: {
   glyph: string;
-  glyphStyle: object;
   title: string;
   subtitle?: string;
   badge?: string;
@@ -254,7 +262,7 @@ function ResultRow({
       accessibilityLabel={accessibilityLabel}
       onPress={onPress}
       style={({pressed}) => [styles.row, pressed && styles.rowPressed]}>
-      <View style={[styles.glyphWrap, glyphStyle]}>
+      <View style={styles.glyphWrap}>
         <Text style={styles.glyph}>{glyph}</Text>
       </View>
       <View style={styles.rowBody}>
@@ -278,13 +286,19 @@ function ResultRow({
 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
+    // Chrome floating over the map, so: a surface fill plus a ring. The ring is
+    // `lineControl`, not `line` — over the basemap it's the only thing bounding
+    // the button, since `surface` is 1.22:1 against the dark basemap and a black
+    // drop shadow is invisible on it.
     iconButton: {
       position: 'absolute',
       left: 16,
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: theme.card,
+      backgroundColor: theme.surface,
+      borderWidth: 1,
+      borderColor: theme.lineControl,
       alignItems: 'center',
       justifyContent: 'center',
       shadowColor: '#000',
@@ -297,7 +311,7 @@ const makeStyles = (theme: Theme) =>
     searchGlyph: {
       fontSize: 22,
       lineHeight: 26,
-      color: theme.accent,
+      color: theme.ink,
     },
     expandedRoot: {
       position: 'absolute',
@@ -308,7 +322,9 @@ const makeStyles = (theme: Theme) =>
     fieldRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: theme.card,
+      backgroundColor: theme.surface,
+      borderWidth: 1,
+      borderColor: theme.lineControl,
       borderRadius: 22,
       paddingLeft: 14,
       paddingRight: 6,
@@ -322,13 +338,13 @@ const makeStyles = (theme: Theme) =>
     fieldGlyph: {
       fontSize: 20,
       lineHeight: 24,
-      color: theme.textTertiary,
+      color: theme.muted,
       marginRight: 8,
     },
     input: {
       flex: 1,
       fontSize: 15,
-      color: theme.textPrimary,
+      color: theme.ink,
       padding: 0,
     },
     fieldClose: {
@@ -337,16 +353,18 @@ const makeStyles = (theme: Theme) =>
       borderRadius: 16,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: theme.surfaceMuted,
+      backgroundColor: theme.lineFill,
     },
     fieldCloseIcon: {
       fontSize: 18,
       lineHeight: 20,
-      color: theme.textSecondary,
+      color: theme.ink,
     },
     resultsCard: {
       marginTop: 8,
-      backgroundColor: theme.card,
+      backgroundColor: theme.surface,
+      borderWidth: 1,
+      borderColor: theme.line,
       borderRadius: 12,
       shadowColor: '#000',
       shadowOpacity: 0.15,
@@ -365,7 +383,7 @@ const makeStyles = (theme: Theme) =>
     },
     emptyText: {
       fontSize: 14,
-      color: theme.textTertiary,
+      color: theme.muted,
     },
     section: {
       paddingTop: 10,
@@ -374,7 +392,7 @@ const makeStyles = (theme: Theme) =>
     sectionTitle: {
       fontSize: 11,
       fontWeight: '700',
-      color: theme.textTertiary,
+      color: theme.muted,
       textTransform: 'uppercase',
       letterSpacing: 0.5,
       paddingHorizontal: 14,
@@ -387,7 +405,7 @@ const makeStyles = (theme: Theme) =>
       paddingVertical: 8,
     },
     rowPressed: {
-      backgroundColor: theme.surfaceMuted,
+      backgroundColor: theme.lineFill,
     },
     glyphWrap: {
       width: 36,
@@ -396,15 +414,7 @@ const makeStyles = (theme: Theme) =>
       alignItems: 'center',
       justifyContent: 'center',
       marginRight: 12,
-    },
-    elementGlyphWrap: {
-      backgroundColor: theme.accent,
-    },
-    tripGlyphWrap: {
-      backgroundColor: theme.trip,
-    },
-    placeGlyphWrap: {
-      backgroundColor: theme.surfaceMuted,
+      backgroundColor: theme.lineFill,
     },
     glyph: {
       fontSize: 18,
@@ -418,21 +428,23 @@ const makeStyles = (theme: Theme) =>
     rowTitle: {
       fontSize: 15,
       fontWeight: '600',
-      color: theme.textPrimary,
+      color: theme.ink,
     },
     rowSubtitle: {
       fontSize: 12,
-      color: theme.textSecondary,
+      color: theme.muted,
       marginTop: 2,
     },
+    // Neutral, like every other badge: it already says "Trip", so the hue was
+    // doing nothing a reader relied on.
     badge: {
-      backgroundColor: theme.tripMuted,
+      backgroundColor: theme.lineFill,
       paddingHorizontal: 8,
       paddingVertical: 3,
       borderRadius: 10,
     },
     badgeText: {
-      color: theme.trip,
+      color: theme.ink,
       fontSize: 11,
       fontWeight: '600',
     },
