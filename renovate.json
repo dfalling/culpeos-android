@@ -3,6 +3,12 @@
   "extends": ["config:recommended"],
   "packageRules": [
     {
+      "description": "Keep java on Adoptium mainline builds. Adoptium also publishes interim respins (`jdk-25.0.4.1+1`), and it builds those only for the platforms that needed the fix — 25.0.4.1 shipped for alpine-linux/x64 and mac/x64 only, with no linux/x64 binary. mise resolves java per platform, so a respin that skips linux/x64 has no metadata there at all and `mise install` hard-fails (`no metadata found for version temurin-25.0.4+101.0.LTS`), breaking CI and every dev machine that isn't a mac x64. Adoptium's semver maps a respin as `patch * 100 + build`, so mainline builds always land under +100 and respins at +1xx and up — that's what this regex excludes. Mainline updates (25.0.5, 26, ...) ship for all platforms and still come through. Drop this rule if Adoptium starts building respins for every platform.",
+      "matchPackageNames": ["java"],
+      "matchManagers": ["mise"],
+      "allowedVersions": "!/\\+\\d{3,}\\./"
+    },
+    {
       "description": "Pin Gradle to <9.7. React Native 0.87.0's bundled gradle-plugin (node_modules/@react-native/gradle-plugin) is compiled with Kotlin 2.2.0, whose compiler can only read Kotlin metadata up to 2.3.0. Gradle >=9.7 bundles a Kotlin 2.4.0 stdlib/reflect that leaks onto the settings-plugin compile classpath, so the build fails compiling the RN plugin (`Module was compiled with an incompatible version of Kotlin`). 9.6.1 is the highest version verified to configure cleanly; the wrapper tracks 9.4.1, the version RN 0.87 itself ships and builds against. Raise this ceiling once React Native ships a gradle-plugin built with Kotlin >=2.3.",
       "matchPackageNames": ["gradle"],
       "matchManagers": ["gradle-wrapper"],
