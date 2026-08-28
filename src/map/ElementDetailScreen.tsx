@@ -22,6 +22,7 @@ import {photoImageSource} from '../photos/photoImageSource';
 import type {Theme} from '../theme/colors';
 import {useTheme} from '../theme/useTheme';
 import {formatSchedule} from './formatSchedule';
+import {mapUrl, webMapUrl} from './mapLink';
 import {metadataRows} from './metadataRows';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ElementDetail'>;
@@ -119,7 +120,7 @@ function ModalContents({
             ) : null}
             <View style={styles.heroBody}>
               {element.location?.address ? (
-                <Text style={styles.subtitle}>{element.location.address}</Text>
+                <LocationLine location={element.location} />
               ) : null}
               {element.completed ? (
                 // Neutral, with a tick doing the work the green used to: status
@@ -255,6 +256,47 @@ function ModalContents({
   );
 }
 
+// The address, tappable: it hands the place to whichever map app the phone has
+// rather than picking one for the user. Styled as a link — underlined, not hue
+// alone — because a line of grey subtitle text gives no hint it does anything.
+function LocationLine({
+  location,
+}: {
+  location: NonNullable<ElementDetail['location']>;
+}) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+  const url = mapUrl(location);
+
+  if (!url) {
+    return <Text style={styles.subtitle}>{location.address}</Text>;
+  }
+
+  return (
+    <Pressable
+      accessibilityRole="link"
+      accessibilityLabel={`Open ${location.address} in a map app`}
+      hitSlop={8}
+      onPress={() => openMap(url, webMapUrl(location))}
+      style={({pressed}) => pressed && styles.linkPressed}>
+      <Text style={[styles.subtitle, styles.subtitleLink]}>
+        {location.address}
+      </Text>
+    </Pressable>
+  );
+}
+
+// `geo:` is the whole point — it's what makes Android offer the chooser — but a
+// phone with no map app installed has nothing to hand it to, and openURL
+// rejects. Fall back to a web map there rather than surfacing a failure.
+async function openMap(url: string, fallback: string | null) {
+  try {
+    await Linking.openURL(url);
+  } catch {
+    if (fallback) await Linking.openURL(fallback).catch(() => {});
+  }
+}
+
 function Section({
   title,
   children,
@@ -343,6 +385,11 @@ const makeStyles = (theme: Theme) =>
     subtitle: {
       fontSize: 13,
       color: theme.muted,
+    },
+    subtitleLink: {
+      color: theme.accentText,
+      textDecorationLine: 'underline',
+      textDecorationColor: theme.accentText,
     },
     completedTag: {
       alignSelf: 'flex-start',
