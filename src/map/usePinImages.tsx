@@ -9,6 +9,12 @@ import {PIN_SELECTED_SCALE, PinIcon} from './PinIcon';
 // capturing at the selected size means that only ever downsamples.
 const RASTER_SCALE = PIN_SELECTED_SCALE;
 
+/** Resolves once the views laid out in this commit have had a frame to draw. */
+const nextFrame = () =>
+  new Promise<void>(resolve => {
+    requestAnimationFrame(() => resolve());
+  });
+
 /**
  * Rasterises map pins into images a symbol layer can draw.
  *
@@ -45,7 +51,10 @@ export function usePinImages(
   // derived from `images` so a capture in flight isn't started twice and a
   // failed one isn't retried forever.
   const attempted = useRef(new Set<string>());
-  const hosts = useRef(new Map<string, ViewInstance | null>());
+  const hosts = useRef(new Map<string, ViewInstance>());
+  // Names waiting to be captured, and whether the drain loop below is running.
+  const queue = useRef<string[]>([]);
+  const capturing = useRef(false);
 
   // A rasterised pin bakes in the colours it was drawn with, so those are part
   // of its name: switching appearance changes both, and the new pins get new
@@ -76,18 +85,41 @@ export function usePinImages(
     );
   }, [icons, images, nameFor, plainPinName]);
 
-  const capture = useCallback((name: string) => {
-    if (attempted.current.has(name)) return;
-    const host = hosts.current.get(name);
-    if (!host) return;
-    attempted.current.add(name);
-
-    // Let the laid-out views actually draw before asking for their pixels:
-    // capture reads them via `view.draw()`, which needs the emoji's text run
-    // resolved and the shadow's drawable in place.
-    requestAnimationFrame(() => {
-      captureRef(host, {format: 'png', result: 'data-uri'})
-        .then(uri => {
+  /**
+   * Captures the queued pins, strictly one at a time.
+   *
+   * The serialisation is the point. react-native-view-shot's Android module
+   * encodes every snapshot through a single *static* byte buffer, and runs
+   * captures on an unbounded thread pool — so two in flight at once compress
+   * their PNGs into the same array. What comes back is one pin's bytes with
+   * another's spliced through them, which decodes to a different pin's emoji
+   * ending in a hard horizontal edge partway down where the bytes stopped
+   * making sense. Nothing in the JS API hints at this, and a whole screen of
+   * elements is exactly the case that starts every capture in one tick.
+   */
+  const drain = useCallback(async () => {
+    if (capturing.current) return;
+    capturing.current = true;
+    try {
+      for (;;) {
+        const name = queue.current.shift();
+        if (name === undefined) break;
+        const host = hosts.current.get(name);
+        if (!host) {
+          // Unmounted before its turn. Forget the attempt so a pin that comes
+          // back — a re-entered screen, a re-added element — is captured then.
+          attempted.current.delete(name);
+          continue;
+        }
+        // Let the laid-out views actually draw before asking for their pixels:
+        // capture reads them via `view.draw()`, which needs the emoji's text
+        // run resolved and the shadow's drawable in place.
+        await nextFrame();
+        try {
+          const uri = await captureRef(host, {
+            format: 'png',
+            result: 'data-uri',
+          });
           hosts.current.delete(name);
           setImages(prev => ({
             ...prev,
@@ -95,15 +127,27 @@ export function usePinImages(
             // image's natural size on the map its unscaled point size.
             [name]: {source: {uri, scale: PixelRatio.get() * RASTER_SCALE}},
           }));
-        })
-        .catch((error: unknown) => {
+        } catch (error: unknown) {
           hosts.current.delete(name);
           // The name stays in `attempted` so we don't retry in a loop; the
           // element keeps the plain pin, which is a legible fallback.
           console.warn(`Failed to rasterize map pin ${name}:`, error);
-        });
-    });
+        }
+      }
+    } finally {
+      capturing.current = false;
+    }
   }, []);
+
+  const capture = useCallback(
+    (name: string) => {
+      if (attempted.current.has(name)) return;
+      attempted.current.add(name);
+      queue.current.push(name);
+      void drain();
+    },
+    [drain],
+  );
 
   const rasterizer = (
     <View pointerEvents="none" style={styles.offscreen}>
@@ -113,7 +157,8 @@ export function usePinImages(
           collapsable={false}
           onLayout={() => capture(name)}
           ref={host => {
-            hosts.current.set(name, host);
+            if (host) hosts.current.set(name, host);
+            else hosts.current.delete(name);
           }}>
           <PinIcon theme={theme} icon={icon} scale={RASTER_SCALE} />
         </View>
