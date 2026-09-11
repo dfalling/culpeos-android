@@ -1,0 +1,70 @@
+diff --git a/lib/commonjs/components/EmojiCategory.js b/lib/commonjs/components/EmojiCategory.js
+index 2c01afda5264a8fb0f8687856ea5f7d71c644bef..cd53c43b265d469d08fd3e320d63a90df138e98b 100644
+--- a/lib/commonjs/components/EmojiCategory.js
++++ b/lib/commonjs/components/EmojiCategory.js
+@@ -115,9 +115,10 @@ const EmojiCategory = /*#__PURE__*/React.memo(_ref2 => {
+   const keyExtractor = React.useCallback(item => item.name, []);
+   const [maxIndex, setMaxIndex] = React.useState(0);
+ 
+-  // with InteractionManager we can show emojis after interaction is finished
+-  // It helps with delay during category change animation
+-  _reactNative.InteractionManager.runAfterInteractions(() => {
++  // InteractionManager was removed from react-native core (RN 0.87);
++  // requestAnimationFrame gives the same "defer past the current frame"
++  // effect for showing emojis after the category change animation.
++  requestAnimationFrame(() => {
+     if (maxIndex === 0 && data.length) {
+       setMaxIndex(minimalEmojisAmountToDisplay);
+     }
+diff --git a/lib/module/components/EmojiCategory.js b/lib/module/components/EmojiCategory.js
+index a858fed2c99eeb3fe0ff9e399ff4da1b2822e3da..75ddb4f6eccad5158bd8a5b89e6488392f5c16d9 100644
+--- a/lib/module/components/EmojiCategory.js
++++ b/lib/module/components/EmojiCategory.js
+@@ -8,7 +8,6 @@ import { useKeyboardStore } from '../store/useKeyboardStore';
+ import { parseEmoji } from '../utils/parseEmoji';
+ import { removeSkinToneModifier } from '../utils/skinToneSelectorUtils';
+ import { useKeyboard } from '../hooks/useKeyboard';
+-import { InteractionManager } from 'react-native';
+ const emptyEmoji = {
+   emoji: '',
+   name: 'blank emoji',
+@@ -108,9 +107,10 @@ export const EmojiCategory = /*#__PURE__*/React.memo(_ref2 => {
+   const keyExtractor = React.useCallback(item => item.name, []);
+   const [maxIndex, setMaxIndex] = React.useState(0);
+ 
+-  // with InteractionManager we can show emojis after interaction is finished
+-  // It helps with delay during category change animation
+-  InteractionManager.runAfterInteractions(() => {
++  // InteractionManager was removed from react-native core (RN 0.87);
++  // requestAnimationFrame gives the same "defer past the current frame"
++  // effect for showing emojis after the category change animation.
++  requestAnimationFrame(() => {
+     if (maxIndex === 0 && data.length) {
+       setMaxIndex(minimalEmojisAmountToDisplay);
+     }
+diff --git a/src/components/EmojiCategory.tsx b/src/components/EmojiCategory.tsx
+index 6869a04f4b41d5f3fc168171f11b3c87d49448e0..77cea4af7290b01a5e8a914fd4f2e35d846f4502 100644
+--- a/src/components/EmojiCategory.tsx
++++ b/src/components/EmojiCategory.tsx
+@@ -14,7 +14,6 @@ import { useKeyboardStore } from '../store/useKeyboardStore'
+ import { parseEmoji } from '../utils/parseEmoji'
+ import { removeSkinToneModifier } from '../utils/skinToneSelectorUtils'
+ import { useKeyboard } from '../hooks/useKeyboard'
+-import { InteractionManager } from 'react-native'
+ 
+ const emptyEmoji: JsonEmoji = {
+   emoji: '',
+@@ -147,9 +146,10 @@ export const EmojiCategory = React.memo(
+ 
+     const [maxIndex, setMaxIndex] = React.useState(0)
+ 
+-    // with InteractionManager we can show emojis after interaction is finished
+-    // It helps with delay during category change animation
+-    InteractionManager.runAfterInteractions(() => {
++    // InteractionManager was removed from react-native core (RN 0.87);
++    // requestAnimationFrame gives the same "defer past the current frame"
++    // effect for showing emojis after the category change animation.
++    requestAnimationFrame(() => {
+       if (maxIndex === 0 && data.length) {
+         setMaxIndex(minimalEmojisAmountToDisplay)
+       }

@@ -46,6 +46,9 @@
       },
     },
   },
+  "patchedDependencies": {
+    "rn-emoji-keyboard@1.7.0": "patches/rn-emoji-keyboard@1.7.0.patch",
+  },
   "overrides": {
     "@jest/create-cache-key-function": "^30.0.0",
     "babel-jest": "^30.0.0",
