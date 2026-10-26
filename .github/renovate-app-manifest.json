@@ -1,5 +1,5 @@
 {
-  "name": "dfalling-renovate",
+  "name": "culpeos-android-renovate",
   "url": "https://github.com/dfalling/culpeos-android",
   "description": "Self-hosted Renovate, run from each repo's .github/workflows/renovate.yml.",
   "public": false,
