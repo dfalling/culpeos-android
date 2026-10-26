@@ -1,4 +1,4 @@
-// Jest 30 note: @react-native/jest-preset 0.87 still declares jest-environment-node,
+// Jest 30 note: @react-native/jest-preset (still as of 0.88) declares jest-environment-node,
 // babel-jest and @jest/create-cache-key-function at ^29.7.0. Its testEnvironment
 // extends whichever jest-environment-node resolves next to the preset, so a v29
 // environment gets paired with jest-runtime 30 and every suite dies on
