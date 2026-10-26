@@ -9,13 +9,13 @@
       "allowedVersions": "/^\\d+\\.\\d+\\.\\d+\\+\\d{1,2}\\.0\\.LTS$/"
     },
     {
-      "description": "Pin Gradle to <9.7. React Native 0.87.0's bundled gradle-plugin (node_modules/@react-native/gradle-plugin) is compiled with Kotlin 2.2.0, whose compiler can only read Kotlin metadata up to 2.3.0. Gradle >=9.7 bundles a Kotlin 2.4.0 stdlib/reflect that leaks onto the settings-plugin compile classpath, so the build fails compiling the RN plugin (`Module was compiled with an incompatible version of Kotlin`). 9.6.1 is the highest version verified to configure cleanly; the wrapper tracks 9.4.1, the version RN 0.87 itself ships and builds against. Raise this ceiling once React Native ships a gradle-plugin built with Kotlin >=2.3.",
+      "description": "Pin Gradle to <9.7. React Native's bundled gradle-plugin (node_modules/@react-native/gradle-plugin) is compiled with Kotlin 2.2.0 (still true as of 0.88.0), whose compiler can only read Kotlin metadata up to 2.3.0. Gradle >=9.7 bundles a Kotlin 2.4.0 stdlib/reflect that leaks onto the settings-plugin compile classpath, so the build fails compiling the RN plugin (`Module was compiled with an incompatible version of Kotlin`). 9.6.1 is the highest version verified to configure cleanly; RN 0.87 and 0.88 themselves ship and build against 9.4.1. Raise this ceiling once React Native ships a gradle-plugin built with Kotlin >=2.3.",
       "matchPackageNames": ["gradle"],
       "matchManagers": ["gradle-wrapper"],
       "allowedVersions": "<9.7.0"
     },
     {
-      "description": "Hold Babel at v7. @react-native/babel-preset (0.87.0) drives the whole RN transform and its plugin chain asserts `^7.0.0-0`, so loading it under @babel/core 8 throws `Requires Babel \"^7.0.0-0\", but was loaded with \"8.x\"` and every Jest suite fails to run. Metro, babel-jest and the RN preset each vendor their own @babel/core 7, so a top-level v8 only ever shadows them — there is nothing to gain until React Native itself moves to Babel 8. Note @babel/plugin-transform-export-namespace-from must stay on the same major as the core that loads it (babel.config.js applies it directly).",
+      "description": "Hold Babel at v7. @react-native/babel-preset (still as of 0.88.0) drives the whole RN transform and its plugin chain asserts `^7.0.0-0`, so loading it under @babel/core 8 throws `Requires Babel \"^7.0.0-0\", but was loaded with \"8.x\"` and every Jest suite fails to run. Metro, babel-jest and the RN preset each vendor their own @babel/core 7, so a top-level v8 only ever shadows them — there is nothing to gain until React Native itself moves to Babel 8. Note @babel/plugin-transform-export-namespace-from must stay on the same major as the core that loads it (babel.config.js applies it directly).",
       "matchPackageNames": ["/^@babel\\//"],
       "allowedVersions": "<8.0.0"
     },
