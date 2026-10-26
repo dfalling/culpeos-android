@@ -1,0 +1,23 @@
+{
+  "name": "dfalling-renovate",
+  "url": "https://github.com/dfalling/culpeos-android",
+  "description": "Self-hosted Renovate, run from each repo's .github/workflows/renovate.yml.",
+  "public": false,
+  "hook_attributes": {
+    "url": "https://github.com/dfalling/culpeos-android",
+    "active": false
+  },
+  "redirect_url": "https://github.com/dfalling/culpeos-android",
+  "default_events": [],
+  "default_permissions": {
+    "administration": "read",
+    "checks": "write",
+    "contents": "write",
+    "issues": "write",
+    "metadata": "read",
+    "pull_requests": "write",
+    "statuses": "write",
+    "vulnerability_alerts": "read",
+    "workflows": "write"
+  }
+}

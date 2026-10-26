@@ -5,16 +5,48 @@ on:
     - cron: '0 6 * * 1-5'  # Weekdays at 6am UTC
   workflow_dispatch:
 
+# Renovate authenticates as a GitHub App (see .github/renovate-app-manifest.json),
+# not with GITHUB_TOKEN, so the workflow token needs no permissions.
+permissions: {}
+
 jobs:
   renovate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      # Installation tokens expire after an hour, so mint a fresh one each run,
+      # scoped to this repository even when the app is installed on others.
+      - uses: actions/create-github-app-token@v3.3.0
+        id: app-token
+        with:
+          client-id: ${{ vars.RENOVATE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RENOVATE_APP_PRIVATE_KEY }}
+          repositories: ${{ github.event.repository.name }}
+
+      # The app's bot account identity, <slug>[bot] <<id>+<slug>[bot]@users.noreply.github.com>.
+      # This is what GitHub stamps on the signed platform commits Renovate makes with an
+      # app token, so Renovate recognises its own commits when checking for edited branches.
+      - name: Resolve bot identity
+        id: bot
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+        run: |
+          user_id=$(gh api "/users/${APP_SLUG}[bot]" --jq .id)
+          echo "username=${APP_SLUG}[bot]" >> "$GITHUB_OUTPUT"
+          echo "git-author=${APP_SLUG}[bot] <${user_id}+${APP_SLUG}[bot]@users.noreply.github.com>" >> "$GITHUB_OUTPUT"
+
       - uses: renovatebot/github-action@v46.1.9
         with:
-          token: ${{ secrets.RENOVATE_TOKEN }}
+          token: ${{ steps.app-token.outputs.token }}
         env:
           RENOVATE_REPOSITORIES: ${{ github.repository }}
           RENOVATE_ONBOARDING: 'false'
           RENOVATE_REQUIRE_CONFIG: optional
-          RENOVATE_GIT_AUTHOR: 'Renovate Bot <bot@renovateapp.com>'
+          RENOVATE_USERNAME: ${{ steps.bot.outputs.username }}
+          RENOVATE_GIT_AUTHOR: ${{ steps.bot.outputs.git-author }}
+          # Handover from the PAT-era identity: find PRs and the Dependency Dashboard
+          # issue opened as dfalling, and keep treating branches last committed as
+          # bot@renovateapp.com as unmodified. Remove both once no PR from before the
+          # switch is still open.
+          RENOVATE_IGNORE_PR_AUTHOR: 'true'
+          RENOVATE_GIT_IGNORED_AUTHORS: '["bot@renovateapp.com"]'
