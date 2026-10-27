@@ -38,7 +38,7 @@ jobs:
       # share one source of truth — a bad version fails here, not just locally.
       - uses: jdx/mise-action@v2
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
 
       - run: bun install --frozen-lockfile
 
