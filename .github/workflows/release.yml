@@ -32,7 +32,7 @@ jobs:
       # Installs node, bun, and java from mise.toml so CI and local builds
       # share one source of truth — a bad version fails here, not just locally.
       - name: Set up mise tools
-        uses: jdx/mise-action@v2
+        uses: jdx/mise-action@v5
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
