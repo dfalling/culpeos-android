@@ -6,7 +6,7 @@
 # jdx/mise-action, so local builds and CI can't drift.
 # Node stays alongside bun because Metro and Gradle's react.gradle plugin
 # shell out to `node` directly — bun is the package manager, not the runtime.
-node = "24"
+node = "26"
 bun = "1.4.4"
 java = "temurin-25.0.5+8.0.LTS"
 
