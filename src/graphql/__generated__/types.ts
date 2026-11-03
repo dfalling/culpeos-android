@@ -12,7 +12,11 @@ export type ElementInput = {
   labels?: Array<string> | null | undefined;
   location?: LocationInput | null | undefined;
   name: string;
-  /** The element's photos, as an ordered list of photo ids (from createPhoto). This is the complete desired set: reordering, removing, or adding ids reorders/removes/adds photos. Omit to leave photos unchanged. */
+  /**
+   * The element's photos, as an ordered list of photo ids (from createPhoto). This
+   * is the complete desired set: reordering, removing, or adding ids
+   * reorders/removes/adds photos. Omit to leave photos unchanged.
+   */
   photoIds?: Array<string> | null | undefined;
   schedule?: ScheduleInput | null | undefined;
   tripIds?: Array<string> | null | undefined;
@@ -127,9 +131,15 @@ export type ElementDetailQuery = { element: { id: string, name: string, icon: st
 
 export type ElementsQueryVariables = Exact<{
   bounds?: GeoBounds | null | undefined;
-  tripId?: string | null | undefined;
+  tripIds?: Array<string> | string | null | undefined;
+  inTrip?: boolean | null | undefined;
+  shared?: boolean | null | undefined;
   labels?: Array<string> | string | null | undefined;
   labelsMatch?: LabelMatchMode | null | undefined;
+  search?: string | null | undefined;
+  hasSchedule?: boolean | null | undefined;
+  completed?: boolean | null | undefined;
+  deleted?: boolean | null | undefined;
 }>;
 
 
@@ -258,12 +268,18 @@ export const ElementDetailDocument = gql`
 }
     ` as unknown as DocumentNode<ElementDetailQuery, ElementDetailQueryVariables>;
 export const ElementsDocument = gql`
-    query Elements($bounds: GeoBounds, $tripId: String, $labels: [String!], $labelsMatch: LabelMatchMode) {
+    query Elements($bounds: GeoBounds, $tripIds: [String!], $inTrip: Boolean, $shared: Boolean, $labels: [String!], $labelsMatch: LabelMatchMode, $search: String, $hasSchedule: Boolean, $completed: Boolean, $deleted: Boolean) {
   elements(
     bounds: $bounds
-    tripId: $tripId
+    tripIds: $tripIds
+    inTrip: $inTrip
+    shared: $shared
     labels: $labels
     labelsMatch: $labelsMatch
+    search: $search
+    hasSchedule: $hasSchedule
+    completed: $completed
+    deleted: $deleted
   ) {
     id
     name

@@ -1,57 +1,42 @@
 import {useMemo} from 'react';
 import {Pressable, StyleSheet, Text, View} from 'react-native';
-import {t} from '../i18n';
 import type {Theme} from '../theme/colors';
 import {useTheme} from '../theme/useTheme';
 
-// Stands in for the trip's emoji on a label pill, so the two filter kinds read
-// differently while sharing one pill style.
-const LABEL_ICON = '🏷️';
+export type ActiveFilterPill = {
+  key: string;
+  /** Leading glyph; the trip's emoji, or a stand-in for the filter's kind. */
+  icon: string;
+  title: string;
+  /** Accessibility label for the pill's `×`. */
+  clearLabel: string;
+  onClear: () => void;
+};
 
 type Props = {
-  /** Active trip filter, or null when not filtering by trip. */
-  trip: {icon: string; name: string} | null;
-  /** Active label filters; rendered as one pill each. */
-  labels: readonly string[];
+  pills: readonly ActiveFilterPill[];
   topOffset: number;
-  onClearTrip: () => void;
-  onClearLabel: (label: string) => void;
 };
 
 /**
- * Floating row of active map filters. Shows the trip filter (if any) followed by
- * a pill per active label; each pill has an `×` to clear just that filter. Trip
- * and label filters combine, so several pills can be shown at once and they wrap
- * onto further lines when they don't fit.
+ * Floating row of active map filters, one pill each with an `×` to clear just
+ * that filter. Filters combine, so several pills can be shown at once and they
+ * wrap onto further lines when they don't fit.
  */
-export function FilterChips({
-  trip,
-  labels,
-  topOffset,
-  onClearTrip,
-  onClearLabel,
-}: Props) {
+export function FilterChips({pills, topOffset}: Props) {
   const theme = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
-  if (!trip && labels.length === 0) return null;
+  if (pills.length === 0) return null;
   return (
     <View style={[styles.wrap, {top: topOffset}]} pointerEvents="box-none">
       <View style={styles.row}>
-        {trip ? (
+        {pills.map(pill => (
           <FilterPill
-            icon={trip.icon}
-            title={trip.name}
-            accessibilityLabel={t.map.clearTripFilter}
-            onClear={onClearTrip}
-          />
-        ) : null}
-        {labels.map(label => (
-          <FilterPill
-            key={label}
-            icon={LABEL_ICON}
-            title={label}
-            accessibilityLabel={t.map.clearLabelFilter(label)}
-            onClear={() => onClearLabel(label)}
+            key={pill.key}
+            icon={pill.icon}
+            title={pill.title}
+            accessibilityLabel={pill.clearLabel}
+            onClear={pill.onClear}
           />
         ))}
       </View>

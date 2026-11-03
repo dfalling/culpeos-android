@@ -31,8 +31,35 @@ export const pt: Strings = {
 
   map: {
     recenter: 'Centralizar o mapa na sua localização',
-    clearTripFilter: 'Remover o filtro de viagem',
     clearLabelFilter: (label: string) => `Remover o filtro ${label}`,
+  },
+
+  filters: {
+    open: 'Filtros',
+    openWithCount: (count: number) =>
+      count === 1 ? 'Filtros, 1 ativo' : `Filtros, ${count} ativos`,
+    title: 'Filtros',
+    close: 'Fechar os filtros',
+    clearAll: 'Limpar tudo',
+    clearFilter: (name: string) => `Remover o filtro ${name}`,
+    text: 'Texto',
+    searchPlaceholder: 'Nome, descrição ou etiqueta',
+    labels: 'Etiquetas',
+    noLabels: 'As etiquetas dos elementos que você carregou aparecem aqui.',
+    trips: 'Viagens',
+    notInTrip: 'Fora de viagens',
+    sharing: 'Compartilhamento',
+    private: 'Privados',
+    shared: 'Compartilhados',
+    noTrips: 'Ainda não há viagens.',
+    all: 'Todos',
+    schedule: 'Agenda',
+    scheduled: 'Agendados',
+    unscheduled: 'Sem agenda',
+    progress: 'Progresso',
+    toDo: 'A fazer',
+    done: 'Feitos',
+    deleted: 'Só excluídos',
   },
 
   search: {

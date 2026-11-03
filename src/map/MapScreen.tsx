@@ -21,7 +21,13 @@ import {
 } from '@react-navigation/native';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import type {NativeSyntheticEvent} from 'react-native';
-import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {AccountMenu} from '../account/AccountMenu';
 import {
@@ -37,7 +43,17 @@ import type {
 import type {Theme} from '../theme/colors';
 import {useTheme} from '../theme/useTheme';
 import {ElementPreviewCard} from './ElementPreviewCard';
+import {
+  activeFilterCount,
+  type ElementFilters,
+  EMPTY_FILTERS,
+  filterKey,
+  filterVariables,
+  labelOptions,
+} from './elementFilters';
 import {FilterChips} from './FilterChips';
+import {FilterSheet} from './FilterSheet';
+import {activeFilterPills} from './filterPills';
 import {PIN_PADDING, PIN_SELECTED_SCALE} from './PinIcon';
 import {pinSortKey, pressedPinId, SELECTED_PIN_SORT_KEY} from './pinHitTest';
 import {zoomForPlaceTypes} from './placeZoom';
@@ -106,16 +122,17 @@ export function MapScreen() {
   // native source isn't handed a new callback every time the map re-renders.
   const selectedElementIdRef = useRef(selectedElementId);
   selectedElementIdRef.current = selectedElementId;
-  // When set, the map is filtered to a single trip: only that trip's elements
-  // are shown and the bounds-based query is paused.
-  const [tripFilter, setTripFilter] = useState<{
-    id: string;
-    name: string;
-    icon: string;
-  } | null>(null);
-  // Labels the map is filtered by, combined with the trip filter (if any) and
-  // matched with ALL semantics so each added label narrows the results further.
-  const [labelFilters, setLabelFilters] = useState<string[]>([]);
+  // Every active filter; see `ElementFilters`. When trips are picked the map
+  // shows only their elements and the bounds-based query is paused; the other
+  // filters narrow whichever mode is active.
+  const [filters, setFilters] = useState<ElementFilters>(EMPTY_FILTERS);
+  const tripIds = useMemo(
+    () => filters.trips.map(trip => trip.id),
+    [filters.trips],
+  );
+  // Identifies the picked set of trips (order-free), or null outside trip mode.
+  const tripFilter = tripIds.length > 0 ? [...tripIds].sort().join(',') : null;
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const safeAreaInsets = useSafeAreaInsets();
 
   // A label tapped in the element details navigates back here with the label in
@@ -125,8 +142,10 @@ export function MapScreen() {
   useEffect(() => {
     if (!pendingLabel) return;
     setSelectedElementId(null);
-    setLabelFilters(prev =>
-      prev.includes(pendingLabel) ? prev : [...prev, pendingLabel],
+    setFilters(prev =>
+      prev.labels.includes(pendingLabel)
+        ? prev
+        : {...prev, labels: [...prev.labels, pendingLabel]},
     );
     navigation.setParams({addLabelFilter: undefined});
   }, [pendingLabel, navigation]);
@@ -230,42 +249,75 @@ export function MapScreen() {
     return offLng <= OFF_CENTER_THRESHOLD && offLat <= OFF_CENTER_THRESHOLD;
   }, [position, viewportState]);
 
-  // Label filters apply on top of either mode below, narrowing the server-side
-  // result. When none are active the vars are omitted so the query is unchanged.
-  const labelVars = useMemo(
-    (): Pick<ElementsQueryVariables, 'labels' | 'labelsMatch'> | undefined =>
-      labelFilters.length > 0
-        ? {labels: labelFilters, labelsMatch: 'ALL'}
-        : undefined,
-    [labelFilters],
-  );
+  // The non-trip filters apply on top of either mode below, narrowing the
+  // server-side result. Inactive ones are omitted, so with none set the query
+  // is the plain one.
+  const filterVars = useMemo(() => filterVariables(filters), [filters]);
+  const currentFilterKey = useMemo(() => filterKey(filters), [filters]);
 
   // One query, two modes: when a trip filter is active fetch that trip's
   // elements; otherwise fetch by viewport bounds. Reusing the single hook keeps
-  // the element shape (and Apollo cache) identical across modes. Label filters
-  // (if any) are layered onto whichever mode is active.
+  // the element shape (and Apollo cache) identical across modes. The other
+  // filters (if any) are layered onto whichever mode is active.
   const {data, loading: elementsLoading} = useQuery(
     ElementsDocument,
     tripFilter
-      ? {variables: {tripId: tripFilter.id, ...labelVars}}
-      : {skip: !bounds, variables: bounds ? {bounds, ...labelVars} : undefined},
+      ? {variables: {tripIds, ...filterVars}}
+      : {
+          skip: !bounds,
+          variables: bounds ? {bounds, ...filterVars} : undefined,
+        },
   );
 
   // Accumulate elements across viewport fetches so pins persist while a new
   // search is in flight. Fine for our small per-user dataset; revisit if we
   // ever need eviction or to reflect server-side deletes. Skip while filtering
   // by trip so trip-only results don't leak into the normal viewport view.
-  const [elementsById, setElementsById] = useState<
-    ReadonlyMap<string, ElementWithLocation>
-  >(new Map());
+  //
+  // The set is only valid for the filters it was fetched under, so it's tagged
+  // with their key and starts over when they change: a pin that matched the
+  // old filters says nothing about the new ones.
+  const [accumulated, setAccumulated] = useState<{
+    key: string;
+    byId: ReadonlyMap<string, ElementWithLocation>;
+  }>(() => ({key: filterKey(EMPTY_FILTERS), byId: new Map()}));
   useEffect(() => {
     if (tripFilter || !data?.elements) return;
-    setElementsById(prev => {
-      const next = new Map(prev);
+    setAccumulated(prev => {
+      const next = new Map(
+        prev.key === currentFilterKey ? prev.byId : undefined,
+      );
       for (const el of data.elements) next.set(el.id, el);
-      return next;
+      return {key: currentFilterKey, byId: next};
     });
-  }, [data?.elements, tripFilter]);
+  }, [data?.elements, tripFilter, currentFilterKey]);
+  const elementsById = useMemo(
+    () =>
+      accumulated.key === currentFilterKey
+        ? accumulated.byId
+        : new Map<string, ElementWithLocation>(),
+    [accumulated, currentFilterKey],
+  );
+
+  // Every label seen on any loaded element this session, whatever the filters
+  // were at the time: the label filter's options. The API has no "list my
+  // labels" query, and offering only labels on what's currently shown would
+  // make picking one collapse the choices to itself.
+  const [seenLabels, setSeenLabels] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
+  useEffect(() => {
+    const elements = data?.elements;
+    if (!elements) return;
+    setSeenLabels(prev => {
+      const fresh = elements.flatMap(el => el.labels).filter(l => !prev.has(l));
+      return fresh.length === 0 ? prev : new Set([...prev, ...fresh]);
+    });
+  }, [data?.elements]);
+  const filterLabelOptions = useMemo(
+    () => labelOptions(seenLabels, filters.labels),
+    [seenLabels, filters.labels],
+  );
 
   // An element deleted from the edit screen navigates back here with its id in
   // route params; drop it from the accumulated set (which otherwise only grows)
@@ -274,11 +326,11 @@ export function MapScreen() {
   useEffect(() => {
     if (!removedElementId) return;
     setSelectedElementId(prev => (prev === removedElementId ? null : prev));
-    setElementsById(prev => {
-      if (!prev.has(removedElementId)) return prev;
-      const next = new Map(prev);
-      next.delete(removedElementId);
-      return next;
+    setAccumulated(prev => {
+      if (!prev.byId.has(removedElementId)) return prev;
+      const byId = new Map(prev.byId);
+      byId.delete(removedElementId);
+      return {...prev, byId};
     });
     navigation.setParams({removedElementId: undefined});
   }, [removedElementId, navigation]);
@@ -288,18 +340,11 @@ export function MapScreen() {
   // thread and offscreen ones cost nothing — culling here only made pins pop in
   // at the screen edges.
   const locatedElements = useMemo(
-    () =>
-      Array.from(elementsById.values()).filter(el => {
-        if (!el.location) return false;
-        // Apply the label filter client-side too (matching the query's ALL
-        // semantics) so pins accumulated before the filter was set — or that no
-        // longer match it — stop rendering without waiting for a refetch.
-        return labelFilters.every(label => el.labels.includes(label));
-      }),
-    [elementsById, labelFilters],
+    () => Array.from(elementsById.values()).filter(el => el.location != null),
+    [elementsById],
   );
 
-  // Elements with a location for the active trip; drives both the pins and the
+  // Elements with a location in the picked trips; drives both the pins and the
   // camera fit while filtering.
   const tripElements = useMemo(
     () =>
@@ -309,7 +354,7 @@ export function MapScreen() {
     [tripFilter, data?.elements],
   );
 
-  // While filtering by trip, show only that trip's elements so trip-only
+  // While filtering by trip, show only the trips' elements so trip-only
   // results don't mix with the accumulated viewport set.
   const displayedElements = tripFilter ? tripElements : locatedElements;
 
@@ -420,18 +465,19 @@ export function MapScreen() {
     [],
   );
 
-  // Fit the camera to the trip's extent once its elements arrive. Guarded by a
-  // ref so panning/zooming afterwards doesn't snap back, and reset when the
-  // filter clears so re-selecting the same trip fits again.
+  // Fit the camera to the trips' extent once their elements arrive. Guarded by
+  // a ref so panning/zooming afterwards doesn't snap back; picking a different
+  // set of trips fits again, and clearing the filter resets it so re-picking
+  // the same trips does too.
   const fittedTripRef = useRef<string | null>(null);
   useEffect(() => {
     if (!tripFilter) {
       fittedTripRef.current = null;
       return;
     }
-    if (fittedTripRef.current === tripFilter.id || elementsLoading) return;
+    if (fittedTripRef.current === tripFilter || elementsLoading) return;
     if (tripElements.length === 0) return;
-    fittedTripRef.current = tripFilter.id;
+    fittedTripRef.current = tripFilter;
 
     let west = Infinity;
     let south = Infinity;
@@ -461,16 +507,17 @@ export function MapScreen() {
 
   const handleSelectElement = useCallback(
     (element: SearchElement) => {
-      setTripFilter(null);
-      setLabelFilters([]);
+      setFilters(EMPTY_FILTERS);
       if (element.location) {
         const {longitude, latitude} = element.location;
         // Seed the marker set so the pin is present immediately, before the
-        // bounds query around the new center returns.
-        setElementsById(prev => {
-          const next = new Map(prev);
-          next.set(element.id, element);
-          return next;
+        // bounds query around the new center returns. Filters were just
+        // cleared, so seed the unfiltered set.
+        const key = filterKey(EMPTY_FILTERS);
+        setAccumulated(prev => {
+          const byId = new Map(prev.key === key ? prev.byId : undefined);
+          byId.set(element.id, element);
+          return {key, byId};
         });
         setSelectedElementId(element.id);
         cameraRef.current?.flyTo({
@@ -490,18 +537,32 @@ export function MapScreen() {
 
   const handleSelectTrip = useCallback((trip: SearchTrip) => {
     setSelectedElementId(null);
-    setTripFilter({id: trip.id, name: trip.name, icon: trip.icon});
+    // "Filter map to trip": that trip alone, replacing any picked before.
+    setFilters(prev => ({
+      ...prev,
+      trips: [{id: trip.id, name: trip.name, icon: trip.icon}],
+      notInTrip: false,
+    }));
   }, []);
 
   const handleSelectPlace = useCallback((place: SearchPlace) => {
-    setTripFilter(null);
-    setLabelFilters([]);
+    setFilters(EMPTY_FILTERS);
     cameraRef.current?.flyTo({
       center: [place.longitude, place.latitude],
       zoom: zoomForPlaceTypes(place.types),
       duration: 1200,
     });
   }, []);
+
+  const handleFiltersChange = useCallback((next: ElementFilters) => {
+    setSelectedElementId(null);
+    setFilters(next);
+  }, []);
+  const filterPills = useMemo(
+    () => activeFilterPills(filters, handleFiltersChange),
+    [filters, handleFiltersChange],
+  );
+  const filterCount = activeFilterCount(filters);
 
   // Brief blank frame while the saved viewport hydrates from storage; the
   // camera's initialViewState is set once, so we wait for the resolved value
@@ -572,14 +633,32 @@ export function MapScreen() {
         />
       ) : null}
       <FilterChips
-        trip={tripFilter}
-        labels={labelFilters}
+        pills={filterPills}
         topOffset={safeAreaInsets.top + 12 + 52}
-        onClearTrip={() => setTripFilter(null)}
-        onClearLabel={label =>
-          setLabelFilters(prev => prev.filter(l => l !== label))
-        }
       />
+      <Pressable
+        accessibilityLabel={
+          filterCount > 0
+            ? t.filters.openWithCount(filterCount)
+            : t.filters.open
+        }
+        accessibilityRole="button"
+        onPress={() => setFilterSheetOpen(true)}
+        style={({pressed}) => [
+          styles.filterButton,
+          {top: safeAreaInsets.top + 12},
+          pressed && styles.pressed,
+        ]}>
+        {/* A funnel, drawn from views: no icon font, and no glyph that some
+            device font might lack. */}
+        <View style={styles.funnelCone} />
+        <View style={styles.funnelStem} />
+        {filterCount > 0 ? (
+          <View style={styles.filterBadge}>
+            <Text style={styles.filterBadgeText}>{filterCount}</Text>
+          </View>
+        ) : null}
+      </Pressable>
       <SearchOverlay
         topOffset={safeAreaInsets.top + 12}
         onSelectElement={handleSelectElement}
@@ -587,6 +666,13 @@ export function MapScreen() {
         onSelectPlace={handleSelectPlace}
       />
       <AccountMenu />
+      <FilterSheet
+        visible={filterSheetOpen}
+        filters={filters}
+        labels={filterLabelOptions}
+        onChange={handleFiltersChange}
+        onClose={() => setFilterSheetOpen(false)}
+      />
     </View>
   );
 }
@@ -620,6 +706,59 @@ const makeStyles = (theme: Theme) =>
       shadowRadius: 4,
       shadowOffset: {width: 0, height: 2},
       elevation: 4,
+    },
+    // Sits beside the search button and matches it: both are map chrome.
+    filterButton: {
+      position: 'absolute',
+      left: 64,
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: theme.surface,
+      borderWidth: 1,
+      borderColor: theme.lineControl,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: '#000',
+      shadowOpacity: 0.2,
+      shadowRadius: 4,
+      shadowOffset: {width: 0, height: 2},
+      elevation: 4,
+    },
+    pressed: {opacity: 0.8},
+    funnelCone: {
+      width: 0,
+      height: 0,
+      borderLeftWidth: 9,
+      borderRightWidth: 9,
+      borderTopWidth: 9,
+      borderLeftColor: 'transparent',
+      borderRightColor: 'transparent',
+      borderTopColor: theme.ink,
+      marginTop: 2,
+    },
+    funnelStem: {
+      width: 4,
+      height: 6,
+      backgroundColor: theme.ink,
+    },
+    // An active-state marker, which is one of accent's sanctioned uses.
+    filterBadge: {
+      position: 'absolute',
+      top: -4,
+      right: -4,
+      minWidth: 18,
+      height: 18,
+      borderRadius: 9,
+      paddingHorizontal: 4,
+      backgroundColor: theme.accent,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    filterBadgeText: {
+      color: theme.onAccent,
+      fontSize: 11,
+      fontWeight: '700',
     },
     recenterIcon: {
       fontSize: 24,

@@ -1,14 +1,26 @@
 query Elements(
   $bounds: GeoBounds
-  $tripId: String
+  $tripIds: [String!]
+  $inTrip: Boolean
+  $shared: Boolean
   $labels: [String!]
   $labelsMatch: LabelMatchMode
+  $search: String
+  $hasSchedule: Boolean
+  $completed: Boolean
+  $deleted: Boolean
 ) {
   elements(
     bounds: $bounds
-    tripId: $tripId
+    tripIds: $tripIds
+    inTrip: $inTrip
+    shared: $shared
     labels: $labels
     labelsMatch: $labelsMatch
+    search: $search
+    hasSchedule: $hasSchedule
+    completed: $completed
+    deleted: $deleted
   ) {
     id
     name
