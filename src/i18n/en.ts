@@ -36,6 +36,30 @@ export const en = {
     clearLabelFilter: (label: string) => `Clear ${label} filter`,
   },
 
+  filters: {
+    open: 'Filters',
+    openWithCount: (count: number) =>
+      count === 1 ? 'Filters, 1 active' : `Filters, ${count} active`,
+    title: 'Filters',
+    close: 'Close filters',
+    clearAll: 'Clear all',
+    clearFilter: (name: string) => `Clear ${name} filter`,
+    text: 'Text',
+    searchPlaceholder: 'Name, description or label',
+    labels: 'Labels',
+    noLabels: 'Labels on the elements you have loaded show up here.',
+    trip: 'Trip',
+    noTrips: 'No trips yet.',
+    all: 'All',
+    schedule: 'Schedule',
+    scheduled: 'Scheduled',
+    unscheduled: 'Unscheduled',
+    progress: 'Progress',
+    toDo: 'To do',
+    done: 'Done',
+    deleted: 'Deleted only',
+  },
+
   search: {
     open: 'Search',
     close: 'Close search',

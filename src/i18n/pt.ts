@@ -35,6 +35,30 @@ export const pt: Strings = {
     clearLabelFilter: (label: string) => `Remover o filtro ${label}`,
   },
 
+  filters: {
+    open: 'Filtros',
+    openWithCount: (count: number) =>
+      count === 1 ? 'Filtros, 1 ativo' : `Filtros, ${count} ativos`,
+    title: 'Filtros',
+    close: 'Fechar os filtros',
+    clearAll: 'Limpar tudo',
+    clearFilter: (name: string) => `Remover o filtro ${name}`,
+    text: 'Texto',
+    searchPlaceholder: 'Nome, descrição ou etiqueta',
+    labels: 'Etiquetas',
+    noLabels: 'As etiquetas dos elementos que você carregou aparecem aqui.',
+    trip: 'Viagem',
+    noTrips: 'Ainda não há viagens.',
+    all: 'Todos',
+    schedule: 'Agenda',
+    scheduled: 'Agendados',
+    unscheduled: 'Sem agenda',
+    progress: 'Progresso',
+    toDo: 'A fazer',
+    done: 'Feitos',
+    deleted: 'Só excluídos',
+  },
+
   search: {
     open: 'Pesquisar',
     close: 'Fechar a pesquisa',

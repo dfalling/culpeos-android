@@ -3,12 +3,20 @@ query Elements(
   $tripId: String
   $labels: [String!]
   $labelsMatch: LabelMatchMode
+  $search: String
+  $hasSchedule: Boolean
+  $completed: Boolean
+  $deleted: Boolean
 ) {
   elements(
     bounds: $bounds
     tripId: $tripId
     labels: $labels
     labelsMatch: $labelsMatch
+    search: $search
+    hasSchedule: $hasSchedule
+    completed: $completed
+    deleted: $deleted
   ) {
     id
     name
