@@ -15,7 +15,7 @@ import {
   View,
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import EmojiPicker from 'rn-emoji-keyboard';
+import EmojiPicker, {en, es, pt} from 'rn-emoji-keyboard';
 import {
   DeleteElementDocument,
   ElementDetailDocument,
@@ -24,6 +24,7 @@ import {
   TripsDocument,
   UpdateElementDocument,
 } from '../graphql/__generated__/types';
+import {language, t} from '../i18n';
 import type {RootStackParamList} from '../navigation/types';
 import {photoImageSource} from '../photos/photoImageSource';
 import {usePhotoUploader} from '../photos/photoUpload';
@@ -32,6 +33,9 @@ import {useTheme} from '../theme/useTheme';
 import {emojiPickerTheme} from '../ui/emojiPickerTheme';
 import {Sheet} from '../ui/Sheet';
 import {TextField} from '../ui/TextField';
+
+// The icon picker ships its own category names and search placeholder.
+const EMOJI_TRANSLATIONS = {en, es, pt};
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ElementEdit'>;
 
@@ -138,7 +142,7 @@ function EditForm({
   const trimmedUri = uri.trim();
   const uriValid = isValidUrl(trimmedUri);
   const uriError =
-    trimmedUri.length > 0 && !uriValid ? 'Enter a valid URL.' : null;
+    trimmedUri.length > 0 && !uriValid ? t.edit.invalidUrl : null;
 
   const canSave =
     name.trim().length > 0 && (trimmedUri.length === 0 || uriValid) && !busy;
@@ -154,7 +158,7 @@ function EditForm({
         ]);
       }
     } catch {
-      setErrorMessage('Could not add photo. Please try again.');
+      setErrorMessage(t.edit.addPhotoFailed);
     }
   }
 
@@ -213,19 +217,15 @@ function EditForm({
       await updateElement({variables: {input}});
       onDone();
     } catch {
-      setErrorMessage('Could not save changes. Please try again.');
+      setErrorMessage(t.edit.saveFailed);
     }
   }
 
   function onDelete() {
-    Alert.alert(
-      'Delete element',
-      `Permanently delete "${element.name}"? This can't be undone.`,
-      [
-        {text: 'Cancel', style: 'cancel'},
-        {text: 'Delete', style: 'destructive', onPress: confirmDelete},
-      ],
-    );
+    Alert.alert(t.edit.deleteElement, t.edit.deleteConfirm(element.name), [
+      {text: t.common.cancel, style: 'cancel'},
+      {text: t.common.delete, style: 'destructive', onPress: confirmDelete},
+    ]);
   }
 
   async function confirmDelete() {
@@ -245,7 +245,7 @@ function EditForm({
       });
       onDeleted();
     } catch {
-      setErrorMessage('Could not delete element. Please try again.');
+      setErrorMessage(t.edit.deleteFailed);
     }
   }
 
@@ -256,19 +256,19 @@ function EditForm({
       <View style={[styles.header, {paddingTop: safeAreaInsets.top + 8}]}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Cancel editing"
+          accessibilityLabel={t.edit.cancel}
           hitSlop={10}
           onPress={onDone}
           disabled={busy}
           style={styles.headerButton}>
-          <Text style={styles.headerButtonText}>Cancel</Text>
+          <Text style={styles.headerButtonText}>{t.common.cancel}</Text>
         </Pressable>
         <Text style={styles.headerTitle} numberOfLines={1}>
-          Edit element
+          {t.edit.title}
         </Text>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Save changes"
+          accessibilityLabel={t.edit.saveChanges}
           hitSlop={10}
           onPress={onSave}
           disabled={!canSave}
@@ -282,7 +282,7 @@ function EditForm({
                 styles.saveText,
                 !canSave && styles.saveTextDisabled,
               ]}>
-              Save
+              {t.edit.save}
             </Text>
           )}
         </Pressable>
@@ -294,19 +294,19 @@ function EditForm({
           {paddingBottom: safeAreaInsets.bottom + 24},
         ]}
         keyboardShouldPersistTaps="handled">
-        <Field label="Name">
+        <Field label={t.edit.name}>
           <TextField
             value={name}
             onChangeText={setName}
-            placeholder="Name"
+            placeholder={t.edit.name}
             editable={!saving}
           />
         </Field>
 
-        <Field label="Icon">
+        <Field label={t.edit.icon}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Choose icon"
+            accessibilityLabel={t.edit.chooseIcon}
             disabled={saving}
             onPress={() => setPickerOpen(true)}
             style={styles.iconButton}>
@@ -318,7 +318,7 @@ function EditForm({
           </Pressable>
         </Field>
 
-        <Field label="URL">
+        <Field label={t.edit.url}>
           <TextField
             value={uri}
             onChangeText={setUri}
@@ -333,7 +333,7 @@ function EditForm({
         </Field>
 
         <View style={styles.switchRow}>
-          <Text style={styles.fieldLabel}>Completed</Text>
+          <Text style={styles.fieldLabel}>{t.edit.completed}</Text>
           {/*
             Android tints a switch from the Material theme's colorPrimary, not
             from ours, so both states are set explicitly. On is a solid mid-tone
@@ -350,7 +350,7 @@ function EditForm({
           />
         </View>
 
-        <Field label="Photos">
+        <Field label={t.edit.photos}>
           <View style={styles.photoGrid}>
             {photos.map(photo => (
               <View key={photo.id} style={styles.photoThumbWrap}>
@@ -360,7 +360,7 @@ function EditForm({
                 />
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="Remove photo"
+                  accessibilityLabel={t.edit.removePhoto}
                   hitSlop={8}
                   disabled={saving || uploading}
                   onPress={() => onRemovePhoto(photo.id)}
@@ -371,7 +371,7 @@ function EditForm({
             ))}
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Add photo"
+              accessibilityLabel={t.edit.addPhoto}
               disabled={saving || uploading}
               onPress={onAddPhoto}
               style={styles.photoAdd}>
@@ -384,22 +384,22 @@ function EditForm({
           </View>
         </Field>
 
-        <Field label="Description">
+        <Field label={t.edit.description}>
           <TextField
             style={styles.multiline}
             value={description}
             onChangeText={setDescription}
-            placeholder="Description"
+            placeholder={t.edit.description}
             multiline
             textAlignVertical="top"
             editable={!saving}
           />
         </Field>
 
-        <Field label="Trips">
+        <Field label={t.edit.trips}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Choose trips"
+            accessibilityLabel={t.edit.chooseTrips}
             disabled={saving}
             onPress={() => setTripSheetOpen(true)}
             style={styles.tripsSelector}>
@@ -417,12 +417,12 @@ function EditForm({
                 ))}
               </View>
             ) : (
-              <Text style={styles.tripsPlaceholder}>Add to trips</Text>
+              <Text style={styles.tripsPlaceholder}>{t.edit.addToTrips}</Text>
             )}
           </Pressable>
         </Field>
 
-        <Field label="Labels">
+        <Field label={t.edit.labels}>
           {labels.length > 0 ? (
             <View style={styles.labelRow}>
               {labels.map(label => (
@@ -430,7 +430,7 @@ function EditForm({
                   <Text style={styles.labelChipText}>{label}</Text>
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel={`Remove label ${label}`}
+                    accessibilityLabel={t.edit.removeLabel(label)}
                     hitSlop={8}
                     disabled={saving}
                     onPress={() => onRemoveLabel(label)}
@@ -446,7 +446,7 @@ function EditForm({
               containerStyle={styles.flex}
               value={labelDraft}
               onChangeText={setLabelDraft}
-              placeholder="Add a label"
+              placeholder={t.edit.addLabelPlaceholder}
               autoCapitalize="none"
               autoCorrect={false}
               returnKeyType="done"
@@ -456,7 +456,7 @@ function EditForm({
             />
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Add label"
+              accessibilityLabel={t.edit.addLabel}
               disabled={saving || labelDraft.trim().length === 0}
               onPress={onAddLabel}
               style={[
@@ -464,7 +464,7 @@ function EditForm({
                 (saving || labelDraft.trim().length === 0) &&
                   styles.labelAddDisabled,
               ]}>
-              <Text style={styles.labelAddText}>Add</Text>
+              <Text style={styles.labelAddText}>{t.edit.add}</Text>
             </Pressable>
           </View>
         </Field>
@@ -473,14 +473,14 @@ function EditForm({
 
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Delete element"
+          accessibilityLabel={t.edit.deleteElement}
           onPress={onDelete}
           disabled={busy}
           style={[styles.deleteButton, busy && styles.deleteButtonDisabled]}>
           {deleting ? (
             <ActivityIndicator color={theme.danger} />
           ) : (
-            <Text style={styles.deleteButtonText}>Delete element</Text>
+            <Text style={styles.deleteButtonText}>{t.edit.deleteElement}</Text>
           )}
         </Pressable>
       </ScrollView>
@@ -490,15 +490,16 @@ function EditForm({
         onClose={() => setPickerOpen(false)}
         onEmojiSelected={emoji => setIcon(emoji.emoji)}
         theme={pickerTheme}
+        translation={EMOJI_TRANSLATIONS[language]}
       />
 
       <Sheet
         visible={tripSheetOpen}
         onClose={() => setTripSheetOpen(false)}
-        scrimAccessibilityLabel="Close trip picker">
-        <Text style={styles.sheetTitle}>Trips</Text>
+        scrimAccessibilityLabel={t.edit.closeTripPicker}>
+        <Text style={styles.sheetTitle}>{t.edit.trips}</Text>
         {allTrips.length === 0 ? (
-          <Text style={styles.sheetEmpty}>No trips available.</Text>
+          <Text style={styles.sheetEmpty}>{t.edit.noTrips}</Text>
         ) : (
           <ScrollView
             style={styles.tripList}

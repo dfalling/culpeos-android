@@ -146,6 +146,22 @@ bunx tsc --noEmit    # typecheck
 
 Reload the app on device with `R` twice (emulator) or shake (physical device).
 
+## Localization
+
+The app is translated into English, Spanish and Portuguese (`src/i18n/`) and follows
+the device language — there's no in-app picker. On Android 13+ users can also pick a
+per-app language under **Settings → Apps → Culpeos → Language**
+(`res/xml/locales_config.xml`). Anything else falls back to English.
+
+- Add user-facing text to `src/i18n/en.ts` and use it as `t.section.key`. `es.ts` and
+  `pt.ts` are typed against `en`, so `tsc` fails until every language has the key.
+- Strings that interpolate are functions (`t.search.goToPlace(name)`), so each language
+  controls its own word order.
+- The language is read once at launch; changing it while the app runs takes effect on
+  the next launch.
+- To add a language: a new `src/i18n/<code>.ts`, an entry in `STRINGS` and `languageFor`
+  in `src/i18n/index.ts`, and a `<locale>` in `locales_config.xml`.
+
 ## GraphQL codegen
 
 Queries/mutations live alongside the code they're used in (`src/**/*.graphql`).

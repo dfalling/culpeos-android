@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import {LoginDocument} from '../graphql/__generated__/types';
+import {t} from '../i18n';
 import type {Theme} from '../theme/colors';
 import {useTheme} from '../theme/useTheme';
 import {TextField} from '../ui/TextField';
@@ -35,13 +36,13 @@ function errorCode(err: unknown): string | undefined {
 function messageForCode(code: string | undefined): string {
   switch (code) {
     case 'INVALID_CREDENTIALS':
-      return 'Invalid email or password.';
+      return t.login.invalidCredentials;
     case 'ACCOUNT_UNCONFIRMED':
-      return 'Please confirm your email address before logging in.';
+      return t.login.accountUnconfirmed;
     case 'RATE_LIMITED':
-      return 'Too many attempts. Please wait a minute and try again.';
+      return t.login.rateLimited;
     default:
-      return 'Login failed. Please try again.';
+      return t.login.failed;
   }
 }
 
@@ -64,7 +65,7 @@ export function LoginScreen() {
         variables: {input: {email, password, deviceLabel: deviceLabel()}},
       });
       if (!data?.login) {
-        setErrorMessage('Login failed. Please try again.');
+        setErrorMessage(t.login.failed);
         return;
       }
       tokenStore.set({
@@ -83,10 +84,10 @@ export function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={styles.flex}>
       <View style={styles.container}>
-        <Text style={styles.title}>Sign in to Culpeos</Text>
+        <Text style={styles.title}>{t.login.title}</Text>
 
         <TextField
-          placeholder="Email"
+          placeholder={t.login.email}
           autoCapitalize="none"
           autoCorrect={false}
           autoComplete="email"
@@ -96,7 +97,7 @@ export function LoginScreen() {
           editable={!loading}
         />
         <TextField
-          placeholder="Password"
+          placeholder={t.login.password}
           autoCapitalize="none"
           autoCorrect={false}
           autoComplete="password"
@@ -124,7 +125,7 @@ export function LoginScreen() {
           {loading ? (
             <ActivityIndicator color={theme.onAccent} />
           ) : (
-            <Text style={styles.buttonText}>Log in</Text>
+            <Text style={styles.buttonText}>{t.login.submit}</Text>
           )}
         </Pressable>
       </View>

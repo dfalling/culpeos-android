@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import {SearchDocument, type SearchQuery} from '../graphql/__generated__/types';
+import {t} from '../i18n';
 import type {Theme} from '../theme/colors';
 import {useTheme} from '../theme/useTheme';
 
@@ -76,7 +77,7 @@ export function SearchOverlay({
   if (!expanded) {
     return (
       <Pressable
-        accessibilityLabel="Search"
+        accessibilityLabel={t.search.open}
         accessibilityRole="button"
         onPress={() => setExpanded(true)}
         style={({pressed}) => [
@@ -101,7 +102,7 @@ export function SearchOverlay({
           map, keeping the query for next time. */}
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Close search"
+        accessibilityLabel={t.search.close}
         style={StyleSheet.absoluteFill}
         onPress={collapse}
       />
@@ -116,7 +117,7 @@ export function SearchOverlay({
             value={text}
             onChangeText={setText}
             onSubmitEditing={submit}
-            placeholder="Search elements, trips, places"
+            placeholder={t.search.placeholder}
             // Not a `TextField`: this one has no border of its own — the pill
             // around it is the field — so there's no rest/focus border to move,
             // and it's autofocused the moment it appears. It still needs the
@@ -131,7 +132,7 @@ export function SearchOverlay({
           {text ? (
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Clear search"
+              accessibilityLabel={t.search.clear}
               hitSlop={10}
               onPress={clear}
               style={styles.fieldClose}>
@@ -151,14 +152,14 @@ export function SearchOverlay({
                 keyboardShouldPersistTaps="handled"
                 style={styles.resultsScroll}>
                 {elements.length > 0 ? (
-                  <Section title="Elements">
+                  <Section title={t.search.elements}>
                     {elements.map(el => (
                       <ResultRow
                         key={el.id}
                         glyph={el.icon || '📍'}
                         title={el.name}
                         subtitle={el.location?.address ?? undefined}
-                        accessibilityLabel={`Go to element ${el.name}`}
+                        accessibilityLabel={t.search.goToElement(el.name)}
                         onPress={() => {
                           onSelectElement(el);
                           collapse();
@@ -169,15 +170,15 @@ export function SearchOverlay({
                 ) : null}
 
                 {trips.length > 0 ? (
-                  <Section title="Trips">
+                  <Section title={t.search.trips}>
                     {trips.map(trip => (
                       <ResultRow
                         key={trip.id}
                         glyph={trip.icon || '🗺️'}
                         title={trip.name}
                         subtitle={trip.description || undefined}
-                        badge="Trip"
-                        accessibilityLabel={`Filter map to trip ${trip.name}`}
+                        badge={t.search.tripBadge}
+                        accessibilityLabel={t.search.filterToTrip(trip.name)}
                         onPress={() => {
                           onSelectTrip(trip);
                           collapse();
@@ -188,14 +189,14 @@ export function SearchOverlay({
                 ) : null}
 
                 {places.length > 0 ? (
-                  <Section title="Places">
+                  <Section title={t.search.places}>
                     {places.map(place => (
                       <ResultRow
                         key={place.placeId}
                         glyph="📍"
                         title={place.name}
                         subtitle={place.address}
-                        accessibilityLabel={`Go to place ${place.name}`}
+                        accessibilityLabel={t.search.goToPlace(place.name)}
                         onPress={() => {
                           onSelectPlace(place);
                           collapse();
@@ -207,7 +208,7 @@ export function SearchOverlay({
               </ScrollView>
             ) : (
               <View style={styles.statusPane}>
-                <Text style={styles.emptyText}>No results</Text>
+                <Text style={styles.emptyText}>{t.search.noResults}</Text>
               </View>
             )}
           </View>

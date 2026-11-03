@@ -1,5 +1,6 @@
 import {useMemo} from 'react';
 import {Pressable, StyleSheet, Text, View} from 'react-native';
+import {t} from '../i18n';
 import type {Theme} from '../theme/colors';
 import {useTheme} from '../theme/useTheme';
 
@@ -40,7 +41,7 @@ export function FilterChips({
           <FilterPill
             icon={trip.icon}
             title={trip.name}
-            accessibilityLabel="Clear trip filter"
+            accessibilityLabel={t.map.clearTripFilter}
             onClear={onClearTrip}
           />
         ) : null}
@@ -49,7 +50,7 @@ export function FilterChips({
             key={label}
             icon={LABEL_ICON}
             title={label}
-            accessibilityLabel={`Clear ${label} filter`}
+            accessibilityLabel={t.map.clearLabelFilter(label)}
             onClear={() => onClearLabel(label)}
           />
         ))}

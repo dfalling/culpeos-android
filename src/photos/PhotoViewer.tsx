@@ -13,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {t} from '../i18n';
 import {photoImageSource} from './photoImageSource';
 import {
   clampScale,
@@ -344,7 +345,7 @@ export function PhotoViewer({uri, description, onClose}: Props) {
             transform: [{translateX}, {translateY}, {scale}],
           }}>
           <Image
-            accessibilityLabel={description || 'Photo'}
+            accessibilityLabel={description || t.photo.photo}
             accessibilityRole="image"
             source={photoImageSource(uri)}
             resizeMode="contain"
@@ -369,7 +370,7 @@ export function PhotoViewer({uri, description, onClose}: Props) {
 
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Close photo"
+        accessibilityLabel={t.photo.close}
         hitSlop={12}
         onPress={onClose}
         style={({pressed}) => [

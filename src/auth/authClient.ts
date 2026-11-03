@@ -19,6 +19,7 @@ import {
   RenewTokenDocument,
   type RenewTokenMutation,
 } from '../graphql/__generated__/types';
+import {t} from '../i18n';
 import {type AuthState, tokenStore} from './tokenStore';
 
 // Error codes the server uses to communicate auth failures. See
@@ -90,9 +91,7 @@ async function doRefresh(): Promise<AuthState | null> {
     const code = extractAuthErrorCode(err);
     if (code && SECURITY_WARNING_CODES.has(code)) {
       tokenStore.clear();
-      securityWarningVar(
-        'We detected unusual activity on your account. Please log in again.',
-      );
+      securityWarningVar(t.login.securityWarning);
     } else if (
       code &&
       (FORCE_LOGOUT_CODES.has(code) || code === 'TOKEN_EXPIRED')
@@ -163,9 +162,7 @@ const errorLink = onError(({error, operation, forward}) => {
 
   if (SECURITY_WARNING_CODES.has(code)) {
     tokenStore.clear();
-    securityWarningVar(
-      'We detected unusual activity on your account. Please log in again.',
-    );
+    securityWarningVar(t.login.securityWarning);
     return;
   }
 

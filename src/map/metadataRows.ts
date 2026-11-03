@@ -7,6 +7,8 @@
 // raw `address` only appears when geocoding failed, since a geocoded one is
 // already shown as the element's location.
 
+import {type Strings, t} from '../i18n';
+
 export type FormattableMetadata = {
   type?: string | null;
   number?: string | null;
@@ -38,28 +40,14 @@ const FIELDS = [
   'address',
 ] as const satisfies readonly (keyof FormattableMetadata)[];
 
-const TITLES: Record<(typeof FIELDS)[number], string> = {
-  number: 'Number',
-  departureLocation: 'From',
-  arrivalLocation: 'To',
-  reservation: 'Reservation',
-  seat: 'Seat',
-  paymentDetails: 'Payment',
-  address: 'Address',
-};
-
 // What a `number` is called depends on how you're travelling. Anything else
 // (car, other, absent) keeps the generic title.
-const NUMBER_TITLES: Record<string, string> = {
-  flight: 'Flight',
-  train: 'Train',
-  bus: 'Bus',
-  ferry: 'Ferry',
-};
+const NUMBER_TITLES = ['flight', 'train', 'bus', 'ferry'] as const;
 
 export function metadataRows(
   metadata: FormattableMetadata | null | undefined,
   {hasLocation}: {hasLocation: boolean} = {hasLocation: false},
+  strings: Strings['booking'] = t.booking,
 ): MetadataRow[] {
   if (!metadata) return [];
 
@@ -70,16 +58,26 @@ export function metadataRows(
     if (field === 'address' && hasLocation) continue;
     rows.push({
       key: field,
-      title: field === 'number' ? numberTitle(metadata.type) : TITLES[field],
+      title:
+        field === 'number'
+          ? numberTitle(metadata.type, strings)
+          : strings[field],
       value,
-      link: field === 'number' ? flightStatusLink(metadata.type, value) : null,
+      link:
+        field === 'number'
+          ? flightStatusLink(metadata.type, value, strings)
+          : null,
     });
   }
   return rows;
 }
 
-function numberTitle(type: string | null | undefined): string {
-  return (type && NUMBER_TITLES[type.toLowerCase()]) || TITLES.number;
+function numberTitle(
+  type: string | null | undefined,
+  strings: Strings['booking'],
+): string {
+  const kind = NUMBER_TITLES.find(title => title === type?.toLowerCase());
+  return kind ? strings[kind] : strings.number;
 }
 
 // A flight number is only worth tapping if it leads somewhere. Parsed numbers
@@ -88,8 +86,9 @@ function numberTitle(type: string | null | undefined): string {
 function flightStatusLink(
   type: string | null | undefined,
   value: string,
+  strings: Strings['booking'],
 ): string | null {
   if (type?.toLowerCase() !== 'flight') return null;
-  const query = encodeURIComponent(`${value} flight status`);
+  const query = encodeURIComponent(strings.flightStatusQuery(value));
   return `https://www.google.com/search?q=${query}`;
 }

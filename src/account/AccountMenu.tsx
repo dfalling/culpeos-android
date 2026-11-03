@@ -3,6 +3,7 @@ import {Pressable, StyleSheet, Text} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {logout} from '../auth/authClient';
 import {useAuth} from '../auth/tokenStore';
+import {t} from '../i18n';
 import type {Theme} from '../theme/colors';
 import {useTheme} from '../theme/useTheme';
 import {Sheet} from '../ui/Sheet';
@@ -27,7 +28,7 @@ export function AccountMenu() {
   return (
     <>
       <Pressable
-        accessibilityLabel="Account menu"
+        accessibilityLabel={t.account.menu}
         accessibilityRole="button"
         onPress={() => setOpen(true)}
         style={({pressed}) => [
@@ -40,7 +41,7 @@ export function AccountMenu() {
       <Sheet
         visible={open}
         onClose={() => setOpen(false)}
-        scrimAccessibilityLabel="Close account menu">
+        scrimAccessibilityLabel={t.account.closeMenu}>
         <Text style={styles.sheetEmail} numberOfLines={1}>
           {user.email}
         </Text>
@@ -54,7 +55,7 @@ export function AccountMenu() {
             styles.sheetItem,
             pressed && styles.sheetItemPressed,
           ]}>
-          <Text style={styles.sheetItemText}>Log out</Text>
+          <Text style={styles.sheetItemText}>{t.account.logOut}</Text>
         </Pressable>
       </Sheet>
     </>
