@@ -3,11 +3,13 @@ import type {ElementsQueryVariables} from '../graphql/__generated__/types';
 /** A three-way filter over a boolean: either side, or no filter at all. */
 export type TriState = 'all' | 'yes' | 'no';
 
+export type TripFilter = {id: string; name: string; icon: string};
+
 /**
  * Everything that narrows the elements shown on the map, mirroring the web
- * filter panel's controls that the GraphQL API can express. Facets narrow each
- * other; within the label facet every label must match (ALL), so each label
- * you add narrows further.
+ * filter panel. Facets narrow each other. Within the trip facet any trip
+ * matches (as on the web); within the label facet every label must match
+ * (ALL), so each label you add narrows further.
  *
  * The map area isn't here: the map is always bounded by its viewport (or, for
  * a trip, fitted to it), so it's inherent rather than a toggle.
@@ -16,7 +18,12 @@ export type ElementFilters = {
   /** Free text matched against name, description and labels. '' = none. */
   search: string;
   labels: readonly string[];
-  trip: {id: string; name: string; icon: string} | null;
+  /** Elements in any of these trips. Non-empty switches off `notInTrip`. */
+  trips: readonly TripFilter[];
+  /** Only elements in no trip. Contradicts `trips`, so the two exclude. */
+  notInTrip: boolean;
+  /** `yes` = in a shared trip, `no` = private. */
+  shared: TriState;
   /** `yes` = scheduled only, `no` = unscheduled only. */
   scheduled: TriState;
   /** `yes` = done, `no` = to do. */
@@ -28,7 +35,9 @@ export type ElementFilters = {
 export const EMPTY_FILTERS: ElementFilters = {
   search: '',
   labels: [],
-  trip: null,
+  trips: [],
+  notInTrip: false,
+  shared: 'all',
   scheduled: 'all',
   completed: 'all',
   deleted: false,
@@ -36,15 +45,22 @@ export const EMPTY_FILTERS: ElementFilters = {
 
 type FilterVariables = Pick<
   ElementsQueryVariables,
-  'labels' | 'labelsMatch' | 'search' | 'hasSchedule' | 'completed' | 'deleted'
+  | 'labels'
+  | 'labelsMatch'
+  | 'search'
+  | 'hasSchedule'
+  | 'completed'
+  | 'deleted'
+  | 'inTrip'
+  | 'shared'
 >;
 
 const triStateValue = (state: TriState): boolean | undefined =>
   state === 'all' ? undefined : state === 'yes';
 
 /**
- * Query variables for every filter except the trip, which picks the query's
- * mode (trip vs. viewport bounds) and is applied by the caller. Inactive
+ * Query variables for every filter except the trips, which pick the query's
+ * mode (trips vs. viewport bounds) and are applied by the caller. Inactive
  * filters are omitted, so with none set the query is the plain bounds query.
  */
 export function filterVariables(filters: ElementFilters): FilterVariables {
@@ -60,6 +76,9 @@ export function filterVariables(filters: ElementFilters): FilterVariables {
   const completed = triStateValue(filters.completed);
   if (completed !== undefined) vars.completed = completed;
   if (filters.deleted) vars.deleted = true;
+  if (filters.notInTrip && filters.trips.length === 0) vars.inTrip = false;
+  const shared = triStateValue(filters.shared);
+  if (shared !== undefined) vars.shared = shared;
   return vars;
 }
 
@@ -71,12 +90,14 @@ export function filterVariables(filters: ElementFilters): FilterVariables {
 export function filterKey(filters: ElementFilters): string {
   const vars = filterVariables(filters);
   return JSON.stringify([
-    filters.trip?.id ?? null,
+    filters.trips.map(trip => trip.id).sort(),
     vars.search ?? null,
     vars.labels ? [...vars.labels].sort() : null,
     vars.hasSchedule ?? null,
     vars.completed ?? null,
     vars.deleted ?? false,
+    vars.inTrip ?? null,
+    vars.shared ?? null,
   ]);
 }
 
@@ -85,7 +106,9 @@ export function activeFilterCount(filters: ElementFilters): number {
   return (
     (filters.search.trim() ? 1 : 0) +
     filters.labels.length +
-    (filters.trip ? 1 : 0) +
+    filters.trips.length +
+    (filters.notInTrip && filters.trips.length === 0 ? 1 : 0) +
+    (filters.shared === 'all' ? 0 : 1) +
     (filters.scheduled === 'all' ? 0 : 1) +
     (filters.completed === 'all' ? 0 : 1) +
     (filters.deleted ? 1 : 0)
@@ -117,4 +140,30 @@ export function labelOptions(
   return Array.from(new Set([...seen, ...selected])).sort((a, b) =>
     a.localeCompare(b, undefined, {sensitivity: 'base'}),
   );
+}
+
+/**
+ * Adds `trip` if absent, removes it if present. Picking a trip turns off "not
+ * in a trip", which it contradicts.
+ */
+export function toggleTrip(
+  filters: ElementFilters,
+  trip: TripFilter,
+): ElementFilters {
+  const selected = filters.trips.some(t => t.id === trip.id);
+  return {
+    ...filters,
+    trips: selected
+      ? filters.trips.filter(t => t.id !== trip.id)
+      : [...filters.trips, trip],
+    notInTrip: selected ? filters.notInTrip : false,
+  };
+}
+
+/** Turning "not in a trip" on clears the trip selection, as on the web. */
+export function setNotInTrip(
+  filters: ElementFilters,
+  notInTrip: boolean,
+): ElementFilters {
+  return {...filters, notInTrip, trips: notInTrip ? [] : filters.trips};
 }

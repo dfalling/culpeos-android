@@ -32,7 +32,6 @@ export const en = {
 
   map: {
     recenter: 'Recenter map on your location',
-    clearTripFilter: 'Clear trip filter',
     clearLabelFilter: (label: string) => `Clear ${label} filter`,
   },
 
@@ -48,7 +47,11 @@ export const en = {
     searchPlaceholder: 'Name, description or label',
     labels: 'Labels',
     noLabels: 'Labels on the elements you have loaded show up here.',
-    trip: 'Trip',
+    trips: 'Trips',
+    notInTrip: 'Not in a trip',
+    sharing: 'Sharing',
+    private: 'Private',
+    shared: 'Shared',
     noTrips: 'No trips yet.',
     all: 'All',
     schedule: 'Schedule',

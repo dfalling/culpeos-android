@@ -32,7 +32,6 @@ export const es: Strings = {
 
   map: {
     recenter: 'Centrar el mapa en tu ubicación',
-    clearTripFilter: 'Quitar el filtro de viaje',
     clearLabelFilter: (label: string) => `Quitar el filtro ${label}`,
   },
 
@@ -48,7 +47,11 @@ export const es: Strings = {
     searchPlaceholder: 'Nombre, descripción o etiqueta',
     labels: 'Etiquetas',
     noLabels: 'Aquí aparecen las etiquetas de los elementos que has cargado.',
-    trip: 'Viaje',
+    trips: 'Viajes',
+    notInTrip: 'Sin viaje',
+    sharing: 'Compartir',
+    private: 'Privados',
+    shared: 'Compartidos',
     noTrips: 'Aún no hay viajes.',
     all: 'Todos',
     schedule: 'Programación',

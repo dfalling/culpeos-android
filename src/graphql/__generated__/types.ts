@@ -131,7 +131,9 @@ export type ElementDetailQuery = { element: { id: string, name: string, icon: st
 
 export type ElementsQueryVariables = Exact<{
   bounds?: GeoBounds | null | undefined;
-  tripId?: string | null | undefined;
+  tripIds?: Array<string> | string | null | undefined;
+  inTrip?: boolean | null | undefined;
+  shared?: boolean | null | undefined;
   labels?: Array<string> | string | null | undefined;
   labelsMatch?: LabelMatchMode | null | undefined;
   search?: string | null | undefined;
@@ -266,10 +268,12 @@ export const ElementDetailDocument = gql`
 }
     ` as unknown as DocumentNode<ElementDetailQuery, ElementDetailQueryVariables>;
 export const ElementsDocument = gql`
-    query Elements($bounds: GeoBounds, $tripId: String, $labels: [String!], $labelsMatch: LabelMatchMode, $search: String, $hasSchedule: Boolean, $completed: Boolean, $deleted: Boolean) {
+    query Elements($bounds: GeoBounds, $tripIds: [String!], $inTrip: Boolean, $shared: Boolean, $labels: [String!], $labelsMatch: LabelMatchMode, $search: String, $hasSchedule: Boolean, $completed: Boolean, $deleted: Boolean) {
   elements(
     bounds: $bounds
-    tripId: $tripId
+    tripIds: $tripIds
+    inTrip: $inTrip
+    shared: $shared
     labels: $labels
     labelsMatch: $labelsMatch
     search: $search

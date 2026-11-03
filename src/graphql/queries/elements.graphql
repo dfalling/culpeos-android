@@ -1,6 +1,8 @@
 query Elements(
   $bounds: GeoBounds
-  $tripId: String
+  $tripIds: [String!]
+  $inTrip: Boolean
+  $shared: Boolean
   $labels: [String!]
   $labelsMatch: LabelMatchMode
   $search: String
@@ -10,7 +12,9 @@ query Elements(
 ) {
   elements(
     bounds: $bounds
-    tripId: $tripId
+    tripIds: $tripIds
+    inTrip: $inTrip
+    shared: $shared
     labels: $labels
     labelsMatch: $labelsMatch
     search: $search

@@ -9,16 +9,21 @@ import {
   filterKey,
   filterVariables,
   labelOptions,
+  setNotInTrip,
   toggleLabel,
+  toggleTrip,
 } from '../src/map/elementFilters';
 import {activeFilterPills} from '../src/map/filterPills';
 
 const TRIP = {id: 't1', name: 'Lisbon', icon: '🇵🇹'};
+const TRIP2 = {id: 't2', name: 'Porto', icon: ''};
 
 const ALL_ON: ElementFilters = {
   search: '  tapas ',
   labels: ['food', 'bar'],
-  trip: TRIP,
+  trips: [TRIP, TRIP2],
+  notInTrip: false,
+  shared: 'no',
   scheduled: 'no',
   completed: 'yes',
   deleted: true,
@@ -37,7 +42,22 @@ test('every active filter maps to its query variable', () => {
     hasSchedule: false,
     completed: true,
     deleted: true,
+    shared: false,
   });
+});
+
+test('"not in a trip" maps to inTrip: false', () => {
+  expect(filterVariables({...EMPTY_FILTERS, notInTrip: true})).toEqual({
+    inTrip: false,
+  });
+  expect(activeFilterCount({...EMPTY_FILTERS, notInTrip: true})).toBe(1);
+});
+
+test('picked trips override "not in a trip"', () => {
+  const filters = {...EMPTY_FILTERS, trips: [TRIP], notInTrip: true};
+  expect(filterVariables(filters)).toEqual({});
+  expect(activeFilterCount(filters)).toBe(1);
+  expect(filterKey(filters)).toBe(filterKey({...filters, notInTrip: false}));
 });
 
 test('a whitespace-only search is no filter', () => {
@@ -46,18 +66,23 @@ test('a whitespace-only search is no filter', () => {
   expect(activeFilterCount(filters)).toBe(0);
 });
 
-test('the trip is not a variable; it picks the query mode', () => {
-  expect(filterVariables({...EMPTY_FILTERS, trip: TRIP})).toEqual({});
+test('trips are not a variable; they pick the query mode', () => {
+  expect(filterVariables({...EMPTY_FILTERS, trips: [TRIP]})).toEqual({});
 });
 
-test('each label counts as its own filter', () => {
-  expect(activeFilterCount(ALL_ON)).toBe(7);
+test('each label and each trip counts as its own filter', () => {
+  expect(activeFilterCount(ALL_ON)).toBe(9);
 });
 
-test('the filter key ignores label order and search padding', () => {
-  expect(filterKey({...ALL_ON, labels: ['bar', 'food'], search: 'tapas'})).toBe(
-    filterKey(ALL_ON),
-  );
+test('the filter key ignores label and trip order and search padding', () => {
+  expect(
+    filterKey({
+      ...ALL_ON,
+      labels: ['bar', 'food'],
+      trips: [TRIP2, TRIP],
+      search: 'tapas',
+    }),
+  ).toBe(filterKey(ALL_ON));
 });
 
 test('the filter key changes with every filter', () => {
@@ -65,7 +90,11 @@ test('the filter key changes with every filter', () => {
   const variants: ElementFilters[] = [
     {...EMPTY_FILTERS, search: 'x'},
     {...EMPTY_FILTERS, labels: ['x']},
-    {...EMPTY_FILTERS, trip: TRIP},
+    {...EMPTY_FILTERS, trips: [TRIP]},
+    {...EMPTY_FILTERS, trips: [TRIP, TRIP2]},
+    {...EMPTY_FILTERS, notInTrip: true},
+    {...EMPTY_FILTERS, shared: 'yes'},
+    {...EMPTY_FILTERS, shared: 'no'},
     {...EMPTY_FILTERS, scheduled: 'yes'},
     {...EMPTY_FILTERS, scheduled: 'no'},
     {...EMPTY_FILTERS, completed: 'yes'},
@@ -83,6 +112,22 @@ test('toggleLabel adds and removes', () => {
   expect(toggleLabel(on, 'food').labels).toEqual([]);
 });
 
+test('picking a trip turns off "not in a trip"; unpicking leaves it', () => {
+  const loose = {...EMPTY_FILTERS, notInTrip: true};
+  const picked = toggleTrip(loose, TRIP);
+  expect(picked).toEqual({...EMPTY_FILTERS, trips: [TRIP], notInTrip: false});
+  expect(toggleTrip(toggleTrip(picked, TRIP2), TRIP).trips).toEqual([TRIP2]);
+});
+
+test('"not in a trip" clears the picked trips', () => {
+  const picked = {...EMPTY_FILTERS, trips: [TRIP, TRIP2]};
+  expect(setNotInTrip(picked, true)).toEqual({
+    ...EMPTY_FILTERS,
+    notInTrip: true,
+  });
+  expect(setNotInTrip(picked, false)).toEqual(picked);
+});
+
 test('label options include selected labels and sort case-insensitively', () => {
   expect(labelOptions(['beach', 'Art', 'cafe'], ['zoo', 'cafe'])).toEqual([
     'Art',
@@ -96,7 +141,9 @@ test('one pill per active filter, each clearing only itself', () => {
   const onChange = jest.fn();
   const pills = activeFilterPills(ALL_ON, onChange);
   expect(pills.map(p => p.key)).toEqual([
-    'trip',
+    'trip:t1',
+    'trip:t2',
+    'shared',
     'search',
     'label:food',
     'label:bar',
@@ -105,18 +152,34 @@ test('one pill per active filter, each clearing only itself', () => {
     'deleted',
   ]);
   expect(pills[0]).toMatchObject({icon: '🇵🇹', title: 'Lisbon'});
-  expect(pills[1].title).toBe('tapas');
+  // A trip without an emoji falls back to the generic trip glyph.
+  expect(pills[1]).toMatchObject({icon: '🗺️', title: 'Porto'});
+  expect(pills[2].title).toBe('Private');
+  expect(pills[3].title).toBe('tapas');
 
   for (const pill of pills) pill.onClear();
   const cleared = onChange.mock.calls.map(([f]) => f as ElementFilters);
-  expect(cleared[0]).toEqual({...ALL_ON, trip: null});
-  expect(cleared[1]).toEqual({...ALL_ON, search: ''});
-  expect(cleared[2]).toEqual({...ALL_ON, labels: ['bar']});
-  expect(cleared[3]).toEqual({...ALL_ON, labels: ['food']});
-  expect(cleared[4]).toEqual({...ALL_ON, scheduled: 'all'});
-  expect(cleared[5]).toEqual({...ALL_ON, completed: 'all'});
-  expect(cleared[6]).toEqual({...ALL_ON, deleted: false});
-  for (const f of cleared) expect(activeFilterCount(f)).toBe(6);
+  expect(cleared).toEqual([
+    {...ALL_ON, trips: [TRIP2]},
+    {...ALL_ON, trips: [TRIP]},
+    {...ALL_ON, shared: 'all'},
+    {...ALL_ON, search: ''},
+    {...ALL_ON, labels: ['bar']},
+    {...ALL_ON, labels: ['food']},
+    {...ALL_ON, scheduled: 'all'},
+    {...ALL_ON, completed: 'all'},
+    {...ALL_ON, deleted: false},
+  ]);
+  for (const f of cleared) expect(activeFilterCount(f)).toBe(8);
+});
+
+test('"not in a trip" gets a pill that clears it', () => {
+  const onChange = jest.fn();
+  const filters = {...EMPTY_FILTERS, notInTrip: true};
+  const [pill] = activeFilterPills(filters, onChange);
+  expect(pill).toMatchObject({key: 'notInTrip', title: 'Not in a trip'});
+  pill.onClear();
+  expect(onChange).toHaveBeenCalledWith(EMPTY_FILTERS);
 });
 
 test('no filters, no pills', () => {

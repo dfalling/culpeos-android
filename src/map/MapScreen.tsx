@@ -122,11 +122,16 @@ export function MapScreen() {
   // native source isn't handed a new callback every time the map re-renders.
   const selectedElementIdRef = useRef(selectedElementId);
   selectedElementIdRef.current = selectedElementId;
-  // Every active filter; see `ElementFilters`. When a trip is set the map shows
-  // only that trip's elements and the bounds-based query is paused; the other
+  // Every active filter; see `ElementFilters`. When trips are picked the map
+  // shows only their elements and the bounds-based query is paused; the other
   // filters narrow whichever mode is active.
   const [filters, setFilters] = useState<ElementFilters>(EMPTY_FILTERS);
-  const tripFilter = filters.trip;
+  const tripIds = useMemo(
+    () => filters.trips.map(trip => trip.id),
+    [filters.trips],
+  );
+  // Identifies the picked set of trips (order-free), or null outside trip mode.
+  const tripFilter = tripIds.length > 0 ? [...tripIds].sort().join(',') : null;
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const safeAreaInsets = useSafeAreaInsets();
 
@@ -257,7 +262,7 @@ export function MapScreen() {
   const {data, loading: elementsLoading} = useQuery(
     ElementsDocument,
     tripFilter
-      ? {variables: {tripId: tripFilter.id, ...filterVars}}
+      ? {variables: {tripIds, ...filterVars}}
       : {
           skip: !bounds,
           variables: bounds ? {bounds, ...filterVars} : undefined,
@@ -339,7 +344,7 @@ export function MapScreen() {
     [elementsById],
   );
 
-  // Elements with a location for the active trip; drives both the pins and the
+  // Elements with a location in the picked trips; drives both the pins and the
   // camera fit while filtering.
   const tripElements = useMemo(
     () =>
@@ -349,7 +354,7 @@ export function MapScreen() {
     [tripFilter, data?.elements],
   );
 
-  // While filtering by trip, show only that trip's elements so trip-only
+  // While filtering by trip, show only the trips' elements so trip-only
   // results don't mix with the accumulated viewport set.
   const displayedElements = tripFilter ? tripElements : locatedElements;
 
@@ -460,18 +465,19 @@ export function MapScreen() {
     [],
   );
 
-  // Fit the camera to the trip's extent once its elements arrive. Guarded by a
-  // ref so panning/zooming afterwards doesn't snap back, and reset when the
-  // filter clears so re-selecting the same trip fits again.
+  // Fit the camera to the trips' extent once their elements arrive. Guarded by
+  // a ref so panning/zooming afterwards doesn't snap back; picking a different
+  // set of trips fits again, and clearing the filter resets it so re-picking
+  // the same trips does too.
   const fittedTripRef = useRef<string | null>(null);
   useEffect(() => {
     if (!tripFilter) {
       fittedTripRef.current = null;
       return;
     }
-    if (fittedTripRef.current === tripFilter.id || elementsLoading) return;
+    if (fittedTripRef.current === tripFilter || elementsLoading) return;
     if (tripElements.length === 0) return;
-    fittedTripRef.current = tripFilter.id;
+    fittedTripRef.current = tripFilter;
 
     let west = Infinity;
     let south = Infinity;
@@ -531,9 +537,11 @@ export function MapScreen() {
 
   const handleSelectTrip = useCallback((trip: SearchTrip) => {
     setSelectedElementId(null);
+    // "Filter map to trip": that trip alone, replacing any picked before.
     setFilters(prev => ({
       ...prev,
-      trip: {id: trip.id, name: trip.name, icon: trip.icon},
+      trips: [{id: trip.id, name: trip.name, icon: trip.icon}],
+      notInTrip: false,
     }));
   }, []);
 

@@ -8,6 +8,7 @@ const ICONS = {
   search: '🔍',
   label: '🏷️',
   trip: '🗺️',
+  shared: '👥',
   schedule: '📅',
   progress: '☑️',
   deleted: '🗑️',
@@ -19,13 +20,35 @@ export function activeFilterPills(
   onChange: (filters: ElementFilters) => void,
 ): ActiveFilterPill[] {
   const pills: ActiveFilterPill[] = [];
-  if (filters.trip) {
+  for (const trip of filters.trips) {
     pills.push({
-      key: 'trip',
-      icon: filters.trip.icon || ICONS.trip,
-      title: filters.trip.name,
-      clearLabel: t.map.clearTripFilter,
-      onClear: () => onChange({...filters, trip: null}),
+      key: `trip:${trip.id}`,
+      icon: trip.icon || ICONS.trip,
+      title: trip.name,
+      clearLabel: t.filters.clearFilter(trip.name),
+      onClear: () =>
+        onChange({
+          ...filters,
+          trips: filters.trips.filter(other => other.id !== trip.id),
+        }),
+    });
+  }
+  if (filters.notInTrip && filters.trips.length === 0) {
+    pills.push({
+      key: 'notInTrip',
+      icon: ICONS.trip,
+      title: t.filters.notInTrip,
+      clearLabel: t.filters.clearFilter(t.filters.notInTrip),
+      onClear: () => onChange({...filters, notInTrip: false}),
+    });
+  }
+  if (filters.shared !== 'all') {
+    pills.push({
+      key: 'shared',
+      icon: ICONS.shared,
+      title: filters.shared === 'yes' ? t.filters.shared : t.filters.private,
+      clearLabel: t.filters.clearFilter(t.filters.sharing),
+      onClear: () => onChange({...filters, shared: 'all'}),
     });
   }
   const search = filters.search.trim();

@@ -17,8 +17,10 @@ import {TextField} from '../ui/TextField';
 import {
   type ElementFilters,
   EMPTY_FILTERS,
+  setNotInTrip,
   type TriState,
   toggleLabel,
+  toggleTrip,
 } from './elementFilters';
 
 type Props = {
@@ -125,31 +127,35 @@ export function FilterSheet({
           )}
         </Group>
 
-        <Group title={t.filters.trip}>
+        <Group title={t.filters.trips}>
           {trips.length > 0 ? (
             <View style={styles.chips}>
-              {trips.map(trip => {
-                const selected = filters.trip?.id === trip.id;
-                return (
-                  <Chip
-                    key={trip.id}
-                    label={trip.icon ? `${trip.icon} ${trip.name}` : trip.name}
-                    selected={selected}
-                    onPress={() =>
-                      onChange({
-                        ...filters,
-                        trip: selected
-                          ? null
-                          : {id: trip.id, name: trip.name, icon: trip.icon},
-                      })
-                    }
-                  />
-                );
-              })}
+              {trips.map(trip => (
+                <Chip
+                  key={trip.id}
+                  label={trip.icon ? `${trip.icon} ${trip.name}` : trip.name}
+                  selected={filters.trips.some(other => other.id === trip.id)}
+                  onPress={() =>
+                    onChange(
+                      toggleTrip(filters, {
+                        id: trip.id,
+                        name: trip.name,
+                        icon: trip.icon,
+                      }),
+                    )
+                  }
+                />
+              ))}
             </View>
           ) : (
             <Text style={styles.empty}>{t.filters.noTrips}</Text>
           )}
+          {/* Sits with the trips because the two exclude each other. */}
+          <SwitchRow
+            label={t.filters.notInTrip}
+            value={filters.notInTrip && filters.trips.length === 0}
+            onChange={on => onChange(setNotInTrip(filters, on))}
+          />
         </Group>
 
         <Segmented
@@ -170,17 +176,21 @@ export function FilterSheet({
           onChange={completed => onChange({...filters, completed})}
         />
 
-        <View style={styles.switchRow}>
-          <Text style={styles.groupTitle}>{t.filters.deleted}</Text>
-          {/* Themed like the edit screen's switch; see the note there. */}
-          <Switch
-            accessibilityLabel={t.filters.deleted}
-            value={filters.deleted}
-            onValueChange={deleted => onChange({...filters, deleted})}
-            trackColor={{false: theme.lineFillStrong, true: theme.muted}}
-            thumbColor={theme.surface}
-          />
-        </View>
+        <Segmented
+          title={t.filters.sharing}
+          value={filters.shared}
+          yes={t.filters.shared}
+          no={t.filters.private}
+          // Private reads before Shared, matching the web panel.
+          noFirst
+          onChange={shared => onChange({...filters, shared})}
+        />
+
+        <SwitchRow
+          label={t.filters.deleted}
+          value={filters.deleted}
+          onChange={deleted => onChange({...filters, deleted})}
+        />
       </ScrollView>
     </Sheet>
   );
@@ -193,6 +203,32 @@ function Group({title, children}: {title: string; children: React.ReactNode}) {
     <View style={styles.group}>
       <Text style={styles.groupTitle}>{title}</Text>
       {children}
+    </View>
+  );
+}
+
+function SwitchRow({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: boolean;
+  onChange: (value: boolean) => void;
+}) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+  return (
+    <View style={styles.switchRow}>
+      <Text style={styles.groupTitle}>{label}</Text>
+      {/* Themed like the edit screen's switch; see the note there. */}
+      <Switch
+        accessibilityLabel={label}
+        value={value}
+        onValueChange={onChange}
+        trackColor={{false: theme.lineFillStrong, true: theme.muted}}
+        thumbColor={theme.surface}
+      />
     </View>
   );
 }
