@@ -1,6 +1,7 @@
 import {type ReactNode, useEffect, useMemo, useRef, useState} from 'react';
 import {Animated, BackHandler, Pressable, StyleSheet, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {t} from '../i18n';
 import type {Theme} from '../theme/colors';
 import {useTheme} from '../theme/useTheme';
 
@@ -31,7 +32,7 @@ export function Sheet({
   visible,
   onClose,
   dismissOnScrimPress = true,
-  scrimAccessibilityLabel = 'Close',
+  scrimAccessibilityLabel = t.common.close,
   children,
 }: Props) {
   const theme = useTheme();

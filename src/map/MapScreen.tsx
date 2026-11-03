@@ -29,6 +29,7 @@ import {
   type ElementsQuery,
   type ElementsQueryVariables,
 } from '../graphql/__generated__/types';
+import {t} from '../i18n';
 import type {
   RootStackNavigation,
   RootStackParamList,
@@ -550,7 +551,7 @@ export function MapScreen() {
       {pinRasterizer}
       {position && !isCenteredOnUser && !selectedElementId ? (
         <TouchableOpacity
-          accessibilityLabel="Recenter map on your location"
+          accessibilityLabel={t.map.recenter}
           accessibilityRole="button"
           onPress={flyToUser}
           style={[

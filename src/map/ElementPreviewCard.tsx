@@ -2,6 +2,7 @@ import {useQuery} from '@apollo/client/react';
 import {useMemo} from 'react';
 import {Pressable, StyleSheet, Text, View} from 'react-native';
 import {ElementDetailDocument} from '../graphql/__generated__/types';
+import {t} from '../i18n';
 import type {Theme} from '../theme/colors';
 import {useTheme} from '../theme/useTheme';
 
@@ -29,14 +30,14 @@ export function ElementPreviewCard({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={
-        element ? `Open details for ${element.name}` : 'Open details'
+        element ? t.preview.openFor(element.name) : t.preview.open
       }
       onPress={onExpand}
       style={[styles.card, {bottom: bottomOffset}]}>
       {element?.icon ? <Text style={styles.icon}>{element.icon}</Text> : null}
       <View style={styles.body}>
         <Text style={styles.title} numberOfLines={1}>
-          {element?.name ?? (loading ? 'Loading…' : ' ')}
+          {element?.name ?? (loading ? t.common.loading : ' ')}
         </Text>
         {element?.location?.address ? (
           <Text style={styles.subtitle} numberOfLines={1}>
@@ -51,7 +52,7 @@ export function ElementPreviewCard({
       </View>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Close preview"
+        accessibilityLabel={t.preview.close}
         hitSlop={10}
         onPress={onClose}
         style={styles.closeButton}>

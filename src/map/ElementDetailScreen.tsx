@@ -16,6 +16,7 @@ import {
   ElementDetailDocument,
   type ElementDetailQuery,
 } from '../graphql/__generated__/types';
+import {t} from '../i18n';
 import type {RootStackParamList} from '../navigation/types';
 import {PhotoViewer} from '../photos/PhotoViewer';
 import {photoImageSource} from '../photos/photoImageSource';
@@ -87,23 +88,23 @@ function ModalContents({
       <View style={[styles.header, {paddingTop: safeAreaInsets.top + 8}]}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Close details"
+          accessibilityLabel={t.detail.close}
           hitSlop={10}
           onPress={onClose}
           style={styles.closeButton}>
           <Text style={styles.closeIcon}>×</Text>
         </Pressable>
         <Text style={styles.headerTitle} numberOfLines={1}>
-          {element?.name ?? (loading ? 'Loading…' : ' ')}
+          {element?.name ?? (loading ? t.common.loading : ' ')}
         </Text>
         {element ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Edit element"
+            accessibilityLabel={t.detail.editElement}
             hitSlop={10}
             onPress={onEdit}
             style={styles.editButton}>
-            <Text style={styles.editButtonText}>Edit</Text>
+            <Text style={styles.editButtonText}>{t.detail.edit}</Text>
           </Pressable>
         ) : null}
       </View>
@@ -127,7 +128,9 @@ function ModalContents({
                 // is carried by icon and copy, not hue. `danger` is the app's
                 // only status color, and this isn't one.
                 <View style={styles.completedTag}>
-                  <Text style={styles.completedTagText}>✓ Completed</Text>
+                  <Text style={styles.completedTagText}>
+                    {t.detail.completed}
+                  </Text>
                 </View>
               ) : null}
             </View>
@@ -144,8 +147,8 @@ function ModalContents({
                   accessibilityRole="imagebutton"
                   accessibilityLabel={
                     photo.description
-                      ? `View photo full screen: ${photo.description}`
-                      : 'View photo full screen'
+                      ? t.detail.viewPhotoWith(photo.description)
+                      : t.detail.viewPhoto
                   }
                   onPress={() => setViewedPhoto(photo)}
                   style={({pressed}) => pressed && styles.photoPressed}>
@@ -159,16 +162,16 @@ function ModalContents({
           ) : null}
 
           {element.description ? (
-            <Section title="About">
+            <Section title={t.detail.about}>
               <Text style={styles.body}>{element.description}</Text>
             </Section>
           ) : null}
 
           {element.uri ? (
-            <Section title="Link">
+            <Section title={t.detail.link}>
               <Pressable
                 accessibilityRole="link"
-                accessibilityLabel={`Open link ${element.uri}`}
+                accessibilityLabel={t.detail.openLink(element.uri)}
                 onPress={() => Linking.openURL(element.uri)}
                 style={({pressed}) => pressed && styles.linkPressed}>
                 <Text style={styles.link} numberOfLines={2}>
@@ -179,7 +182,7 @@ function ModalContents({
           ) : null}
 
           {element.schedule ? (
-            <Section title="Schedule">
+            <Section title={t.detail.schedule}>
               <Text style={styles.body}>
                 {formatSchedule(element.schedule)}
               </Text>
@@ -187,7 +190,7 @@ function ModalContents({
           ) : null}
 
           {booking.length > 0 ? (
-            <Section title="Booking">
+            <Section title={t.detail.booking}>
               <View style={styles.bookingRows}>
                 {booking.map(({key, title, value, link}) => (
                   <View key={key} style={styles.bookingRow}>
@@ -195,7 +198,7 @@ function ModalContents({
                     {link ? (
                       <Pressable
                         accessibilityRole="link"
-                        accessibilityLabel={`Look up ${title.toLowerCase()} ${value}`}
+                        accessibilityLabel={t.detail.lookUp(title, value)}
                         onPress={() => Linking.openURL(link)}
                         style={({pressed}) => [
                           styles.bookingValue,
@@ -215,13 +218,13 @@ function ModalContents({
           ) : null}
 
           {element.labels.length > 0 ? (
-            <Section title="Labels">
+            <Section title={t.detail.labels}>
               <View style={styles.labelRow}>
                 {element.labels.map(label => (
                   <Pressable
                     key={label}
                     accessibilityRole="button"
-                    accessibilityLabel={`Filter map by label ${label}`}
+                    accessibilityLabel={t.detail.filterByLabel(label)}
                     onPress={() => onSelectLabel(label)}
                     style={({pressed}) => [
                       styles.labelChip,
@@ -275,7 +278,7 @@ function LocationLine({
   return (
     <Pressable
       accessibilityRole="link"
-      accessibilityLabel={`Open ${location.address} in a map app`}
+      accessibilityLabel={t.detail.openInMaps(location.address)}
       hitSlop={8}
       onPress={() => openMap(url, webMapUrl(location))}
       style={({pressed}) => pressed && styles.linkPressed}>

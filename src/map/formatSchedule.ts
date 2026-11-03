@@ -6,6 +6,11 @@
 // Dates and times arrive as ISO8601 fragments (`2026-03-14`, `14:30:00`) in the
 // element's own timezone, so they're split by hand rather than fed to `Date`,
 // which would reinterpret them in the device's zone and slide the day around.
+//
+// The wording and the date/time shapes (month-first vs day-first, 12- vs
+// 24-hour clock) come from the active language's strings.
+
+import {type Strings, t} from '../i18n';
 
 export type FormattableSchedule = {
   allDay: boolean;
@@ -15,24 +20,10 @@ export type FormattableSchedule = {
   endTime?: string | null;
 };
 
-const MONTHS = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec',
-];
-
 export function formatSchedule(
   schedule: FormattableSchedule,
   now: Date = new Date(),
+  strings: Strings['schedule'] = t.schedule,
 ): string {
   const {allDay, startDate, endDate} = schedule;
   // An all-day schedule may still carry times from an earlier edit; ignore them.
@@ -44,42 +35,47 @@ export function formatSchedule(
   const withYear =
     yearOf(startDate) !== now.getFullYear() ||
     yearOf(endDate) !== now.getFullYear();
-  const start = formatDate(startDate, withYear);
-  const end = formatDate(endDate, withYear);
+  const start = formatDate(startDate, withYear, strings);
+  const end = formatDate(endDate, withYear, strings);
+  const time = (value: string) => formatTime(value, strings);
 
   if (startDate === endDate) {
     if (startTime && endTime) {
-      return `${formatTime(startTime)} to ${formatTime(endTime)}, ${start}`;
+      return strings.timeRange(time(startTime), time(endTime), start);
     }
-    if (startTime) return `${formatTime(startTime)}, ${start}`;
-    if (endTime) return `Until ${formatTime(endTime)}, ${start}`;
+    if (startTime) return strings.at(time(startTime), start);
+    if (endTime) return strings.until(time(endTime), start, hoursOf(endTime));
     return start;
   }
 
-  const from = startTime ? `${formatTime(startTime)}, ${start}` : start;
-  const to = endTime ? `${formatTime(endTime)}, ${end}` : end;
-  return `${from} to ${to}`;
+  const from = startTime ? strings.at(time(startTime), start) : start;
+  const to = endTime ? strings.at(time(endTime), end) : end;
+  return strings.range(from, to);
 }
 
 function yearOf(date: string): number {
   return Number(date.slice(0, 4));
 }
 
-// `2026-03-14` -> `Mar 14` / `Mar 14, 2026`
-function formatDate(date: string, withYear: boolean): string {
-  const [year, month, day] = date.split('-').map(Number);
-  const name = MONTHS[month - 1];
-  if (!name || !day) return date;
-  return withYear ? `${name} ${day}, ${year}` : `${name} ${day}`;
+function hoursOf(time: string): number {
+  return Number(time.split(':')[0]);
 }
 
-// `14:30:00` -> `2:30 PM`; a whole hour drops the minutes -> `2 PM`
-function formatTime(time: string): string {
+// `2026-03-14` -> `Mar 14` / `Mar 14, 2026` (or the language's equivalent)
+function formatDate(
+  date: string,
+  withYear: boolean,
+  strings: Strings['schedule'],
+): string {
+  const [year, month, day] = date.split('-').map(Number);
+  const name = strings.months[month - 1];
+  if (!name || !day) return date;
+  return strings.date(day, name, withYear ? year : undefined);
+}
+
+// `14:30:00` -> `2:30 PM` / `14:30`
+function formatTime(time: string, strings: Strings['schedule']): string {
   const [hours, minutes] = time.split(':').map(Number);
   if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return time;
-  const meridiem = hours < 12 ? 'AM' : 'PM';
-  const hour = hours % 12 || 12;
-  return minutes === 0
-    ? `${hour} ${meridiem}`
-    : `${hour}:${String(minutes).padStart(2, '0')} ${meridiem}`;
+  return strings.time(hours, minutes);
 }

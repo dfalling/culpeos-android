@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Languages the app is translated into (src/i18n). Android 13+ lists these
+     under Settings → Apps → Culpeos → Language, so the app's language can
+     differ from the system's without an in-app picker. Keep in sync with
+     STRINGS in src/i18n/index.ts. -->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="en" />
+    <locale android:name="es" />
+    <locale android:name="pt" />
+</locale-config>

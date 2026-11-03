@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {ImportShareDocument} from '../graphql/__generated__/types';
+import {t} from '../i18n';
 import type {RootStackParamList} from '../navigation/types';
 import type {Theme} from '../theme/colors';
 import {useTheme} from '../theme/useTheme';
@@ -57,7 +58,7 @@ export function ImportShareScreen({route, navigation}: Props) {
     <View style={styles.screen}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Cancel import"
+        accessibilityLabel={t.share.cancel}
         hitSlop={10}
         onPress={() => navigation.goBack()}
         style={[styles.closeButton, {top: insets.top + 8}]}>
@@ -67,11 +68,8 @@ export function ImportShareScreen({route, navigation}: Props) {
       <View style={styles.center}>
         {failed ? (
           <>
-            <Text style={styles.title}>Couldn't save that</Text>
-            <Text style={styles.subtitle}>
-              We couldn't import what you shared. Check your connection and try
-              again.
-            </Text>
+            <Text style={styles.title}>{t.share.failedTitle}</Text>
+            <Text style={styles.subtitle}>{t.share.failedBody}</Text>
             <Pressable
               accessibilityRole="button"
               onPress={run}
@@ -79,19 +77,19 @@ export function ImportShareScreen({route, navigation}: Props) {
                 styles.retryButton,
                 pressed && styles.retryButtonPressed,
               ]}>
-              <Text style={styles.retryText}>Try again</Text>
+              <Text style={styles.retryText}>{t.common.tryAgain}</Text>
             </Pressable>
             <Pressable
               accessibilityRole="button"
               hitSlop={8}
               onPress={() => navigation.goBack()}>
-              <Text style={styles.cancelText}>Cancel</Text>
+              <Text style={styles.cancelText}>{t.common.cancel}</Text>
             </Pressable>
           </>
         ) : (
           <>
             <ActivityIndicator size="large" color={theme.muted} />
-            <Text style={styles.title}>Saving shared link…</Text>
+            <Text style={styles.title}>{t.share.saving}</Text>
             <Text style={styles.subtitle} numberOfLines={2}>
               {content}
             </Text>
