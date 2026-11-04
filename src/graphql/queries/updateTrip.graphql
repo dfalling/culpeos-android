@@ -1,0 +1,7 @@
+mutation UpdateTrip($input: TripInput!) {
+  updateTrip(input: $input) {
+    id
+    name
+    icon
+  }
+}

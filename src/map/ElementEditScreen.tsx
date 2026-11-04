@@ -17,10 +17,12 @@ import {
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import EmojiPicker, {en, es, pt} from 'rn-emoji-keyboard';
 import {
+  CreateElementDocument,
+  type CreateElementInput,
   DeleteElementDocument,
   ElementDetailDocument,
   type ElementDetailQuery,
-  type ElementInput,
+  ElementsDocument,
   TripsDocument,
   UpdateElementDocument,
 } from '../graphql/__generated__/types';
@@ -33,11 +35,13 @@ import {useTheme} from '../theme/useTheme';
 import {emojiPickerTheme} from '../ui/emojiPickerTheme';
 import {Sheet} from '../ui/Sheet';
 import {TextField} from '../ui/TextField';
+import {LocationField, type LocationValue} from './LocationField';
 
 // The icon picker ships its own category names and search placeholder.
 const EMOJI_TRANSLATIONS = {en, es, pt};
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ElementEdit'>;
+type CreateProps = NativeStackScreenProps<RootStackParamList, 'ElementCreate'>;
 
 type Element = ElementDetailQuery['element'];
 
@@ -63,7 +67,8 @@ export function ElementEditScreen({route, navigation}: Props) {
       {element ? (
         <EditForm
           element={element}
-          onDone={() => navigation.goBack()}
+          onCancel={() => navigation.goBack()}
+          onSaved={() => navigation.goBack()}
           // popTo (not goBack) so we pass the map back over the now-stale detail
           // screen, and hand it the deleted id to drop from its pin set.
           onDeleted={() =>
@@ -80,49 +85,114 @@ export function ElementEditScreen({route, navigation}: Props) {
 }
 
 /**
- * The form initializes its fields from the loaded element, so it's rendered
- * only once the element is available. We round-trip every field the mutation
- * requires — including the ones we don't expose (location, schedule) —
- * so saving an edit doesn't clear them.
+ * The same form with nothing to load, saving through createElement. A new
+ * element with a location goes back to the map, which flies to it and shows
+ * its preview card — the way picking one from search does. One without a
+ * location has no map presence, so it opens its details instead.
+ */
+export function ElementCreateScreen({route, navigation}: CreateProps) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+  return (
+    <View style={styles.screen}>
+      <EditForm
+        element={null}
+        initialTripIds={route.params?.tripIds}
+        onCancel={() => navigation.goBack()}
+        onSaved={saved => {
+          if (saved.location) {
+            navigation.popTo('Map', {
+              createdElement: {
+                id: saved.id,
+                name: saved.name,
+                icon: saved.icon,
+                labels: saved.labels,
+                location: {
+                  id: saved.location.id,
+                  latitude: saved.location.latitude,
+                  longitude: saved.location.longitude,
+                },
+              },
+            });
+          } else {
+            navigation.replace('ElementDetail', {elementId: saved.id});
+          }
+        }}
+      />
+    </View>
+  );
+}
+
+/**
+ * Edits `element`, or creates a new one when it's null. The form initializes
+ * its fields from the element, so in edit mode it's rendered only once the
+ * element is available. We round-trip every field the mutation requires —
+ * including the ones we don't expose (schedule) — so saving an edit doesn't
+ * clear them.
  */
 function EditForm({
   element,
-  onDone,
+  initialTripIds,
+  onCancel,
+  onSaved,
   onDeleted,
 }: {
-  element: Element;
-  onDone: () => void;
-  onDeleted: () => void;
+  element: Element | null;
+  initialTripIds?: string[];
+  onCancel: () => void;
+  onSaved: (saved: Element) => void;
+  onDeleted?: () => void;
 }) {
   const theme = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const pickerTheme = useMemo(() => emojiPickerTheme(theme), [theme]);
   const safeAreaInsets = useSafeAreaInsets();
-  const [name, setName] = useState(element.name);
-  const [uri, setUri] = useState(element.uri);
-  const [icon, setIcon] = useState(element.icon);
-  const [description, setDescription] = useState(element.description);
-  const [completed, setCompleted] = useState(element.completed);
+  const [name, setName] = useState(element?.name ?? '');
+  const [uri, setUri] = useState(element?.uri ?? '');
+  const [icon, setIcon] = useState(element?.icon ?? '');
+  const [description, setDescription] = useState(element?.description ?? '');
+  const [completed, setCompleted] = useState(element?.completed ?? false);
+  const [location, setLocation] = useState<LocationValue | null>(() =>
+    element?.location
+      ? {
+          address: element.location.address,
+          latitude: element.location.latitude,
+          longitude: element.location.longitude,
+          placeId: element.location.placeId,
+        }
+      : null,
+  );
   // The complete desired set of photos, in display order. Initialized from the
   // element and mutated as the user adds/removes; sent as photoIds on save.
   const [photos, setPhotos] = useState<{id: string; thumbnail: string}[]>(() =>
-    element.photos.map(photo => ({id: photo.id, thumbnail: photo.thumbnail})),
+    (element?.photos ?? []).map(photo => ({
+      id: photo.id,
+      thumbnail: photo.thumbnail,
+    })),
   );
   // The complete desired set of trip ids this element belongs to. Initialized
   // from the element and toggled via the trip sheet; sent as tripIds on save.
   // Ids of trips the user can't see (not in the trips list) are still kept here
   // so saving doesn't drop them.
-  const [tripIds, setTripIds] = useState<string[]>(() =>
-    element.trips.map(trip => trip.id),
+  const [tripIds, setTripIds] = useState<string[]>(
+    () => element?.trips.map(trip => trip.id) ?? initialTripIds ?? [],
   );
   const [tripSheetOpen, setTripSheetOpen] = useState(false);
   // The complete desired set of labels, in display order; sent as labels on
   // save. labelDraft holds the in-progress text for the add-label input.
-  const [labels, setLabels] = useState<string[]>(() => [...element.labels]);
+  const [labels, setLabels] = useState<string[]>(() => [
+    ...(element?.labels ?? []),
+  ]);
   const [labelDraft, setLabelDraft] = useState('');
   const [pickerOpen, setPickerOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [updateElement, {loading: saving}] = useMutation(UpdateElementDocument);
+  const [updateElement, {loading: updating}] = useMutation(
+    UpdateElementDocument,
+  );
+  const [createElement, {loading: creating}] = useMutation(
+    CreateElementDocument,
+  );
+  const saving = updating || creating;
   const [deleteElement, {loading: deleting}] = useMutation(
     DeleteElementDocument,
   );
@@ -179,10 +249,20 @@ function EditForm({
     setLabels(prev => prev.filter(existing => existing !== label));
   }
 
+  function onLocationChange(place: LocationValue & {name?: string}) {
+    setLocation({
+      address: place.address,
+      latitude: place.latitude,
+      longitude: place.longitude,
+      placeId: place.placeId,
+    });
+    // Picking a place before naming the element names it after the place.
+    if (place.name && name.trim().length === 0) setName(place.name);
+  }
+
   async function onSave() {
     setErrorMessage(null);
-    const input: ElementInput = {
-      id: element.id,
+    const input: CreateElementInput = {
       name: name.trim(),
       uri: trimmedUri,
       icon,
@@ -192,15 +272,9 @@ function EditForm({
       photoIds: photos.map(photo => photo.id),
       tripIds,
       labels,
-      location: element.location
-        ? {
-            address: element.location.address,
-            latitude: element.location.latitude,
-            longitude: element.location.longitude,
-            placeId: element.location.placeId,
-          }
-        : undefined,
-      schedule: element.schedule
+      // Null (not omitted) when removed, so an edit clears it.
+      location,
+      schedule: element?.schedule
         ? {
             allDay: element.schedule.allDay,
             startDate: element.schedule.startDate,
@@ -214,14 +288,28 @@ function EditForm({
     };
 
     try {
-      await updateElement({variables: {input}});
-      onDone();
+      if (element) {
+        const result = await updateElement({
+          variables: {input: {...input, id: element.id}},
+        });
+        if (!result.data) throw new Error('updateElement returned no element');
+        onSaved(result.data.updateElement);
+      } else {
+        const result = await createElement({
+          variables: {input},
+          // The map's element queries don't know about the new one yet.
+          refetchQueries: [ElementsDocument],
+        });
+        if (!result.data) throw new Error('createElement returned no element');
+        onSaved(result.data.createElement);
+      }
     } catch {
-      setErrorMessage(t.edit.saveFailed);
+      setErrorMessage(element ? t.edit.saveFailed : t.create.saveFailed);
     }
   }
 
   function onDelete() {
+    if (!element) return;
     Alert.alert(t.edit.deleteElement, t.edit.deleteConfirm(element.name), [
       {text: t.common.cancel, style: 'cancel'},
       {text: t.common.delete, style: 'destructive', onPress: confirmDelete},
@@ -229,6 +317,7 @@ function EditForm({
   }
 
   async function confirmDelete() {
+    if (!element) return;
     setErrorMessage(null);
     try {
       await deleteElement({
@@ -243,7 +332,7 @@ function EditForm({
           cache.gc();
         },
       });
-      onDeleted();
+      onDeleted?.();
     } catch {
       setErrorMessage(t.edit.deleteFailed);
     }
@@ -256,19 +345,19 @@ function EditForm({
       <View style={[styles.header, {paddingTop: safeAreaInsets.top + 8}]}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={t.edit.cancel}
+          accessibilityLabel={element ? t.edit.cancel : t.create.cancel}
           hitSlop={10}
-          onPress={onDone}
+          onPress={onCancel}
           disabled={busy}
           style={styles.headerButton}>
           <Text style={styles.headerButtonText}>{t.common.cancel}</Text>
         </Pressable>
         <Text style={styles.headerTitle} numberOfLines={1}>
-          {t.edit.title}
+          {element ? t.edit.title : t.create.title}
         </Text>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={t.edit.saveChanges}
+          accessibilityLabel={element ? t.edit.saveChanges : t.create.create}
           hitSlop={10}
           onPress={onSave}
           disabled={!canSave}
@@ -282,7 +371,7 @@ function EditForm({
                 styles.saveText,
                 !canSave && styles.saveTextDisabled,
               ]}>
-              {t.edit.save}
+              {element ? t.edit.save : t.create.create}
             </Text>
           )}
         </Pressable>
@@ -316,6 +405,16 @@ function EditForm({
               <Text style={styles.iconButtonPlaceholder}>＋</Text>
             )}
           </Pressable>
+        </Field>
+
+        <Field label={t.edit.location}>
+          <LocationField
+            value={location}
+            onChange={place =>
+              place ? onLocationChange(place) : setLocation(null)
+            }
+            disabled={saving}
+          />
         </Field>
 
         <Field label={t.edit.url}>
@@ -471,18 +570,22 @@ function EditForm({
 
         {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
 
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t.edit.deleteElement}
-          onPress={onDelete}
-          disabled={busy}
-          style={[styles.deleteButton, busy && styles.deleteButtonDisabled]}>
-          {deleting ? (
-            <ActivityIndicator color={theme.danger} />
-          ) : (
-            <Text style={styles.deleteButtonText}>{t.edit.deleteElement}</Text>
-          )}
-        </Pressable>
+        {element ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t.edit.deleteElement}
+            onPress={onDelete}
+            disabled={busy}
+            style={[styles.deleteButton, busy && styles.deleteButtonDisabled]}>
+            {deleting ? (
+              <ActivityIndicator color={theme.danger} />
+            ) : (
+              <Text style={styles.deleteButtonText}>
+                {t.edit.deleteElement}
+              </Text>
+            )}
+          </Pressable>
+        ) : null}
       </ScrollView>
 
       <EmojiPicker

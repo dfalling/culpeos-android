@@ -42,6 +42,7 @@ import type {
 } from '../navigation/types';
 import type {Theme} from '../theme/colors';
 import {useTheme} from '../theme/useTheme';
+import {CreateMenu} from './CreateMenu';
 import {ElementPreviewCard} from './ElementPreviewCard';
 import {
   activeFilterCount,
@@ -334,6 +335,43 @@ export function MapScreen() {
     });
     navigation.setParams({removedElementId: undefined});
   }, [removedElementId, navigation]);
+
+  // A located element created from the add menu navigates back here with
+  // enough of itself to fly to and select, as if picked from search. Its pin is
+  // seeded into the unfiltered set so it shows before the refetch lands; with
+  // filters active the refetch decides whether it belongs on the map at all.
+  // Then clear the param so it isn't re-applied.
+  const createdElement = route.params?.createdElement;
+  useEffect(() => {
+    if (!createdElement) return;
+    const unfilteredKey = filterKey(EMPTY_FILTERS);
+    setAccumulated(prev => {
+      if (prev.key !== unfilteredKey) return prev;
+      const byId = new Map(prev.byId);
+      byId.set(createdElement.id, createdElement);
+      return {...prev, byId};
+    });
+    setSelectedElementId(createdElement.id);
+    cameraRef.current?.flyTo({
+      center: [
+        createdElement.location.longitude,
+        createdElement.location.latitude,
+      ],
+      zoom: ELEMENT_ZOOM,
+      duration: 1200,
+    });
+    navigation.setParams({createdElement: undefined});
+  }, [createdElement, navigation]);
+
+  // A trip created from the add menu: filter the map to it, as picking a trip
+  // from search does, so elements added next start out in it.
+  const createdTrip = route.params?.createdTrip;
+  useEffect(() => {
+    if (!createdTrip) return;
+    setSelectedElementId(null);
+    setFilters(prev => ({...prev, trips: [createdTrip], notInTrip: false}));
+    navigation.setParams({createdTrip: undefined});
+  }, [createdTrip, navigation]);
 
   // Every located element we've accumulated. There's no viewport cull: pins are
   // symbols in the map style now, so MapLibre culls them per tile on the render
@@ -665,6 +703,7 @@ export function MapScreen() {
         onSelectTrip={handleSelectTrip}
         onSelectPlace={handleSelectPlace}
       />
+      <CreateMenu topOffset={safeAreaInsets.top + 12} tripIds={tripIds} />
       <AccountMenu />
       <FilterSheet
         visible={filterSheetOpen}

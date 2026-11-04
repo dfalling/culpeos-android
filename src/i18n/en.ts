@@ -119,6 +119,12 @@ export const en = {
     addPhoto: 'Add photo',
     removePhoto: 'Remove photo',
     description: 'Description',
+    location: 'Location',
+    searchLocation: 'Search for a place',
+    search: 'Search',
+    chooseLocation: (name: string) => `Use ${name} as the location`,
+    removeLocation: 'Remove location',
+    locationSearchFailed: 'Could not search places. Please try again.',
     trips: 'Trips',
     chooseTrips: 'Choose trips',
     addToTrips: 'Add to trips',
@@ -135,6 +141,24 @@ export const en = {
     addPhotoFailed: 'Could not add photo. Please try again.',
     saveFailed: 'Could not save changes. Please try again.',
     deleteFailed: 'Could not delete element. Please try again.',
+  },
+
+  create: {
+    open: 'Add',
+    close: 'Close add menu',
+    newElement: 'New element',
+    newTrip: 'New trip',
+    title: 'New element',
+    cancel: 'Cancel new element',
+    create: 'Create',
+    saveFailed: 'Could not create element. Please try again.',
+  },
+
+  createTrip: {
+    title: 'New trip',
+    cancel: 'Cancel new trip',
+    create: 'Create trip',
+    saveFailed: 'Could not create trip. Please try again.',
   },
 
   share: {

@@ -318,8 +318,8 @@ const makeStyles = (theme: Theme) =>
     expandedRoot: {
       position: 'absolute',
       left: 16,
-      // Leave room for the account avatar pinned at the top-right.
-      right: 64,
+      // Leave room for the add button and account avatar at the top-right.
+      right: 112,
     },
     fieldRow: {
       flexDirection: 'row',

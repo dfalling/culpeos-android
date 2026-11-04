@@ -118,6 +118,12 @@ export const pt: Strings = {
     addPhoto: 'Adicionar foto',
     removePhoto: 'Remover foto',
     description: 'Descrição',
+    location: 'Local',
+    searchLocation: 'Buscar um lugar',
+    search: 'Buscar',
+    chooseLocation: (name: string) => `Usar ${name} como local`,
+    removeLocation: 'Remover o local',
+    locationSearchFailed: 'Não foi possível buscar lugares. Tente novamente.',
     trips: 'Viagens',
     chooseTrips: 'Escolher viagens',
     addToTrips: 'Adicionar a viagens',
@@ -134,6 +140,24 @@ export const pt: Strings = {
     addPhotoFailed: 'Não foi possível adicionar a foto. Tente novamente.',
     saveFailed: 'Não foi possível salvar as alterações. Tente novamente.',
     deleteFailed: 'Não foi possível excluir o elemento. Tente novamente.',
+  },
+
+  create: {
+    open: 'Adicionar',
+    close: 'Fechar o menu de adicionar',
+    newElement: 'Novo elemento',
+    newTrip: 'Nova viagem',
+    title: 'Novo elemento',
+    cancel: 'Cancelar o novo elemento',
+    create: 'Criar',
+    saveFailed: 'Não foi possível criar o elemento. Tente novamente.',
+  },
+
+  createTrip: {
+    title: 'Nova viagem',
+    cancel: 'Cancelar a nova viagem',
+    create: 'Criar viagem',
+    saveFailed: 'Não foi possível criar a viagem. Tente novamente.',
   },
 
   share: {
