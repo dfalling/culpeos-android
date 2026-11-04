@@ -116,8 +116,6 @@ export const en = {
     invalidUrl: 'Enter a valid URL.',
     completed: 'Completed',
     photos: 'Photos',
-    addPhoto: 'Add photo',
-    removePhoto: 'Remove photo',
     description: 'Description',
     location: 'Location',
     searchLocation: 'Search for a place',
@@ -172,6 +170,29 @@ export const en = {
   photo: {
     photo: 'Photo',
     close: 'Close photo',
+  },
+
+  photos: {
+    addPhoto: 'Add photo',
+    closePicker: 'Close photo picker',
+    fromDevice: 'Upload from this device',
+    fromDeviceMultiple: 'Upload from this device (up to 10)',
+    orSearch: 'Or search',
+    searchPlaceholder: 'Search photos',
+    search: 'Search',
+    searchFailed: 'Search failed. Please try again.',
+    noResults: 'No photos found.',
+    chooseResult: (description: string) => `Choose photo: ${description}`,
+    position: (index: number, count: number) => `Photo ${index} of ${count}`,
+    selectToEdit: 'Select to reorder or edit alt text',
+    altText: 'Alt text',
+    altTextPlaceholder: 'Describe the photo',
+    altTextFromSource: 'Comes from the photo’s source and can’t be changed.',
+    altTextFailed: 'Saved, but some alt text could not be updated.',
+    moveEarlier: 'Move earlier',
+    moveLater: 'Move later',
+    remove: 'Remove photo',
+    removeAt: (position: string) => `Remove ${position}`,
   },
 
   booking: {

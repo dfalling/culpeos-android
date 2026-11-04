@@ -1,10 +1,9 @@
 import {useMutation, useQuery} from '@apollo/client/react';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {useMemo, useState} from 'react';
+import {useMemo, useRef, useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -28,8 +27,9 @@ import {
 } from '../graphql/__generated__/types';
 import {language, t} from '../i18n';
 import type {RootStackParamList} from '../navigation/types';
-import {photoImageSource} from '../photos/photoImageSource';
-import {usePhotoUploader} from '../photos/photoUpload';
+import {type EditablePhoto, PhotoGridEditor} from '../photos/PhotoGridEditor';
+import {usePhotoPicker} from '../photos/PhotoPicker';
+import {type SavedAltText, useSaveElementAltText} from '../photos/photoAltText';
 import type {Theme} from '../theme/colors';
 import {useTheme} from '../theme/useTheme';
 import {emojiPickerTheme} from '../ui/emojiPickerTheme';
@@ -163,13 +163,21 @@ function EditForm({
       : null,
   );
   // The complete desired set of photos, in display order. Initialized from the
-  // element and mutated as the user adds/removes; sent as photoIds on save.
-  const [photos, setPhotos] = useState<{id: string; thumbnail: string}[]>(() =>
-    (element?.photos ?? []).map(photo => ({
-      id: photo.id,
-      thumbnail: photo.thumbnail,
-    })),
+  // element and mutated as the user adds/removes/reorders; sent as photoIds
+  // on save. Edited alt text is saved per photo after that, against
+  // savedAltText.
+  const [photos, setPhotos] = useState<EditablePhoto[]>(() =>
+    (element?.photos ?? []).map(toEditablePhoto),
   );
+  const savedAltText = useRef<SavedAltText>(
+    Object.fromEntries(
+      (element?.photos ?? []).map(photo => [photo.id, photo.description]),
+    ),
+  );
+  const saveAltText = useSaveElementAltText();
+  // Set once a new element has been created, so that if its alt text then
+  // fails to save, Save retries as an update instead of creating a duplicate.
+  const createdElement = useRef<Element | null>(null);
   // The complete desired set of trip ids this element belongs to. Initialized
   // from the element and toggled via the trip sheet; sent as tripIds on save.
   // Ids of trips the user can't see (not in the trips list) are still kept here
@@ -196,7 +204,15 @@ function EditForm({
   const [deleteElement, {loading: deleting}] = useMutation(
     DeleteElementDocument,
   );
-  const {pickAndUpload, uploading} = usePhotoUploader();
+  const photoPicker = usePhotoPicker({
+    multiple: true,
+    onPicked: photo => {
+      savedAltText.current[photo.id] = photo.description;
+      setPhotos(prev => [...prev, toEditablePhoto(photo)]);
+    },
+    onError: () => setErrorMessage(t.edit.addPhotoFailed),
+  });
+  const uploading = photoPicker.busy;
   const {data: tripsData} = useQuery(TripsDocument);
   const allTrips = tripsData?.trips ?? [];
   const selectedTrips = allTrips.filter(trip => tripIds.includes(trip.id));
@@ -216,25 +232,6 @@ function EditForm({
 
   const canSave =
     name.trim().length > 0 && (trimmedUri.length === 0 || uriValid) && !busy;
-
-  async function onAddPhoto() {
-    setErrorMessage(null);
-    try {
-      const photo = await pickAndUpload();
-      if (photo) {
-        setPhotos(prev => [
-          ...prev,
-          {id: photo.id, thumbnail: photo.thumbnail},
-        ]);
-      }
-    } catch {
-      setErrorMessage(t.edit.addPhotoFailed);
-    }
-  }
-
-  function onRemovePhoto(id: string) {
-    setPhotos(prev => prev.filter(photo => photo.id !== id));
-  }
 
   function onAddLabel() {
     const label = labelDraft.trim();
@@ -287,13 +284,15 @@ function EditForm({
         : undefined,
     };
 
+    let saved: Element;
     try {
-      if (element) {
+      const existing = element ?? createdElement.current;
+      if (existing) {
         const result = await updateElement({
-          variables: {input: {...input, id: element.id}},
+          variables: {input: {...input, id: existing.id}},
         });
         if (!result.data) throw new Error('updateElement returned no element');
-        onSaved(result.data.updateElement);
+        saved = result.data.updateElement;
       } else {
         const result = await createElement({
           variables: {input},
@@ -301,10 +300,20 @@ function EditForm({
           refetchQueries: [ElementsDocument],
         });
         if (!result.data) throw new Error('createElement returned no element');
-        onSaved(result.data.createElement);
+        saved = result.data.createElement;
+        createdElement.current = saved;
       }
     } catch {
       setErrorMessage(element ? t.edit.saveFailed : t.create.saveFailed);
+      return;
+    }
+    // Alt text goes per photo once the photos are on the element. The element
+    // is saved either way; on a partial failure stay on the form so Save can
+    // retry the alt text that didn't go through.
+    if (await saveAltText(saved.id, photos, savedAltText.current)) {
+      onSaved(saved);
+    } else {
+      setErrorMessage(t.photos.altTextFailed);
     }
   }
 
@@ -450,37 +459,16 @@ function EditForm({
         </View>
 
         <Field label={t.edit.photos}>
-          <View style={styles.photoGrid}>
-            {photos.map(photo => (
-              <View key={photo.id} style={styles.photoThumbWrap}>
-                <Image
-                  source={photoImageSource(photo.thumbnail)}
-                  style={styles.photoThumb}
-                />
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={t.edit.removePhoto}
-                  hitSlop={8}
-                  disabled={saving || uploading}
-                  onPress={() => onRemovePhoto(photo.id)}
-                  style={styles.photoRemove}>
-                  <Text style={styles.photoRemoveIcon}>×</Text>
-                </Pressable>
-              </View>
-            ))}
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t.edit.addPhoto}
-              disabled={saving || uploading}
-              onPress={onAddPhoto}
-              style={styles.photoAdd}>
-              {uploading ? (
-                <ActivityIndicator color={theme.muted} />
-              ) : (
-                <Text style={styles.photoAddIcon}>＋</Text>
-              )}
-            </Pressable>
-          </View>
+          <PhotoGridEditor
+            photos={photos}
+            onChange={setPhotos}
+            onAdd={() => {
+              setErrorMessage(null);
+              photoPicker.open();
+            }}
+            adding={uploading}
+            disabled={saving}
+          />
         </Field>
 
         <Field label={t.edit.description}>
@@ -596,6 +584,8 @@ function EditForm({
         translation={EMOJI_TRANSLATIONS[language]}
       />
 
+      {photoPicker.sheet}
+
       <Sheet
         visible={tripSheetOpen}
         onClose={() => setTripSheetOpen(false)}
@@ -635,6 +625,20 @@ function EditForm({
       </Sheet>
     </KeyboardAvoidingView>
   );
+}
+
+function toEditablePhoto(photo: {
+  id: string;
+  thumbnail: string;
+  description: string;
+  type?: EditablePhoto['type'];
+}): EditablePhoto {
+  return {
+    id: photo.id,
+    thumbnail: photo.thumbnail,
+    description: photo.description,
+    type: photo.type,
+  };
 }
 
 function Field({label, children}: {label: string; children: React.ReactNode}) {
@@ -725,54 +729,6 @@ const makeStyles = (theme: Theme) =>
     },
     multiline: {
       minHeight: 120,
-    },
-    photoGrid: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 10,
-    },
-    photoThumbWrap: {
-      width: 80,
-      height: 80,
-    },
-    photoThumb: {
-      width: 80,
-      height: 80,
-      borderRadius: 8,
-      backgroundColor: theme.lineFill,
-    },
-    photoRemove: {
-      position: 'absolute',
-      top: -6,
-      right: -6,
-      width: 22,
-      height: 22,
-      borderRadius: 11,
-      // Inverts against the screen so the badge reads on any photo in either
-      // appearance: a dark chip in light mode, a light chip in dark mode.
-      backgroundColor: theme.ink,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    photoRemoveIcon: {
-      color: theme.canvas,
-      fontSize: 16,
-      lineHeight: 18,
-      fontWeight: '600',
-    },
-    photoAdd: {
-      width: 80,
-      height: 80,
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: theme.lineControl,
-      borderStyle: 'dashed',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    photoAddIcon: {
-      fontSize: 28,
-      color: theme.muted,
     },
     switchRow: {
       flexDirection: 'row',

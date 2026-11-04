@@ -1,0 +1,15 @@
+query SearchPhotos($query: String!, $source: PhotoSource!) {
+  searchPhotos(query: $query, source: $source) {
+    type
+    description
+    full
+    regular
+    small
+    thumbnail
+    attributionUrl
+    creditName
+    creditUrl
+    license
+    downloadLocation
+  }
+}
