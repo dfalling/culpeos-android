@@ -4,5 +4,6 @@ mutation CreatePhoto($input: PhotoInput!) {
     thumbnail
     regular
     description
+    type
   }
 }

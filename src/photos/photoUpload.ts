@@ -27,29 +27,33 @@ export type UploadedPhoto = CreatePhotoMutation['createPhoto'];
 
 type PickedImage = {uri: string};
 
+// The server allows 10 upload URLs a minute per user, so a bigger batch would
+// fail part-way through.
+export const MAX_PHOTOS_PER_PICK = 10;
+
 /**
- * Open the system photo library and return the chosen image, or null if the
- * user backed out. Throws on a genuine picker error.
+ * Open the system photo library and return the chosen images (up to `limit`),
+ * or an empty list if the user backed out. Throws on a genuine picker error.
  */
-async function pickPhoto(): Promise<PickedImage | null> {
+async function pickPhotos(limit: number): Promise<PickedImage[]> {
   const result = await launchImageLibrary({
     mediaType: 'photo',
-    selectionLimit: 1,
+    selectionLimit: limit,
     // Full quality — we do our own downsampling so the output is predictable
     // and always JPEG, regardless of the source format (HEIC, PNG, …).
     quality: 1,
   });
 
-  if (result.didCancel) return null;
+  if (result.didCancel) return [];
   if (result.errorCode) {
     throw new Error(
       result.errorMessage ?? `Could not open photos (${result.errorCode}).`,
     );
   }
 
-  const asset = result.assets?.[0];
-  if (!asset?.uri) return null;
-  return {uri: asset.uri};
+  return (result.assets ?? []).flatMap(asset =>
+    asset.uri ? [{uri: asset.uri}] : [],
+  );
 }
 
 /**
@@ -108,25 +112,26 @@ async function putToSignedUrl(url: string, fileUri: string): Promise<void> {
 }
 
 /**
- * Drives the three-step photo flow: pick + downsample on-device, request a
- * signed URL, upload the bytes, then register the S3 photo. Returns the
- * created Photo, or null if the user cancelled the picker. The caller is
- * responsible for attaching the returned id to an element's photoIds.
+ * Drives the photo flow: pick (up to `limit` images) and downsample on-device,
+ * then for each image request a signed URL, upload the bytes, and register the
+ * S3 photo. Images upload one at a time and each is handed to `onUploaded` as
+ * soon as it's ready, so they appear while the rest are still going. Resolves
+ * with how many failed (0 if the user cancelled the picker). The caller is
+ * responsible for attaching the photo ids to an element or trip.
  */
 export function usePhotoUploader(): {
-  pickAndUpload: () => Promise<UploadedPhoto | null>;
+  pickAndUpload: (
+    limit: number,
+    onUploaded: (photo: UploadedPhoto) => void,
+  ) => Promise<{failed: number}>;
   uploading: boolean;
 } {
   const client = useApolloClient();
   const [createPhoto] = useMutation(CreatePhotoDocument);
   const [uploading, setUploading] = useState(false);
 
-  const pickAndUpload = useCallback(async () => {
-    const picked = await pickPhoto();
-    if (!picked) return null;
-
-    setUploading(true);
-    try {
+  const uploadOne = useCallback(
+    async (picked: PickedImage): Promise<UploadedPhoto> => {
       const uri = await downsampleToLimit(picked);
 
       // Step 1: signed upload URL. no-cache so each upload gets a fresh URL.
@@ -147,10 +152,32 @@ export function usePhotoUploader(): {
       const photo = photoData?.createPhoto;
       if (!photo) throw new Error('Photo could not be created.');
       return photo;
-    } finally {
-      setUploading(false);
-    }
-  }, [client, createPhoto]);
+    },
+    [client, createPhoto],
+  );
+
+  const pickAndUpload = useCallback(
+    async (limit: number, onUploaded: (photo: UploadedPhoto) => void) => {
+      const picked = await pickPhotos(limit);
+      if (picked.length === 0) return {failed: 0};
+
+      setUploading(true);
+      let failed = 0;
+      try {
+        for (const image of picked) {
+          try {
+            onUploaded(await uploadOne(image));
+          } catch {
+            failed++;
+          }
+        }
+      } finally {
+        setUploading(false);
+      }
+      return {failed};
+    },
+    [uploadOne],
+  );
 
   return {pickAndUpload, uploading};
 }

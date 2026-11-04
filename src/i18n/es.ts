@@ -117,8 +117,6 @@ export const es: Strings = {
     invalidUrl: 'Ingresa una URL válida.',
     completed: 'Completado',
     photos: 'Fotos',
-    addPhoto: 'Agregar foto',
-    removePhoto: 'Quitar foto',
     description: 'Descripción',
     location: 'Ubicación',
     searchLocation: 'Buscar un lugar',
@@ -173,6 +171,30 @@ export const es: Strings = {
   photo: {
     photo: 'Foto',
     close: 'Cerrar la foto',
+  },
+
+  photos: {
+    addPhoto: 'Agregar foto',
+    closePicker: 'Cerrar el selector de fotos',
+    fromDevice: 'Subir desde este dispositivo',
+    fromDeviceMultiple: 'Subir desde este dispositivo (hasta 10)',
+    orSearch: 'O buscar',
+    searchPlaceholder: 'Buscar fotos',
+    search: 'Buscar',
+    searchFailed: 'La búsqueda falló. Vuelve a intentarlo.',
+    noResults: 'No se encontraron fotos.',
+    chooseResult: (description: string) => `Elegir foto: ${description}`,
+    position: (index: number, count: number) => `Foto ${index} de ${count}`,
+    selectToEdit: 'Selecciona para reordenar o editar el texto alternativo',
+    altText: 'Texto alternativo',
+    altTextPlaceholder: 'Describe la foto',
+    altTextFromSource: 'Viene de la fuente de la foto y no se puede cambiar.',
+    altTextFailed:
+      'Se guardó, pero no se pudo actualizar parte del texto alternativo.',
+    moveEarlier: 'Mover antes',
+    moveLater: 'Mover después',
+    remove: 'Quitar foto',
+    removeAt: (position: string) => `Quitar ${position}`,
   },
 
   booking: {

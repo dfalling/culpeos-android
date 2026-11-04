@@ -94,6 +94,11 @@ export type PhotoInput = {
   creditUrl?: string | null | undefined;
   /** Image alt text. Optional for s3 (defaults to ""); required for unsplash/wikimedia. */
   description?: string | null | undefined;
+  /**
+   * Unsplash only: the downloadLocation from searchPhotos. Reported to Unsplash
+   * when the photo is created, as its API guidelines require.
+   */
+  downloadLocation?: string | null | undefined;
   full?: string | null | undefined;
   license?: string | null | undefined;
   regular?: string | null | undefined;
@@ -103,6 +108,10 @@ export type PhotoInput = {
   thumbnail?: string | null | undefined;
   type: PhotoType;
 };
+
+export type PhotoSource =
+  | 'UNSPLASH'
+  | 'WIKIMEDIA';
 
 export type PhotoType =
   | 'S3'
@@ -133,19 +142,26 @@ export type TripInput = {
   timeZone?: string | null | undefined;
 };
 
+export type UpdateElementPhotoInput = {
+  /** New alt text (max 255 characters; empty clears it) */
+  description: string;
+  elementId: string;
+  photoId: string;
+};
+
 export type CreateElementMutationVariables = Exact<{
   input: CreateElementInput;
 }>;
 
 
-export type CreateElementMutation = { createElement: { id: string, name: string, icon: string, description: string, completed: boolean, uri: string, labels: Array<string>, trips: Array<{ id: string }>, location: { id: string, address: string, latitude: number, longitude: number, placeId: string | null } | null, photos: Array<{ id: string, thumbnail: string, regular: string, description: string }>, schedule: { id: string, allDay: boolean, startDate: string, endDate: string, startTime: string | null, endTime: string | null, startTz: string, endTz: string } | null, metadata: { type: string | null, number: string | null, reservation: string | null, seat: string | null, paymentDetails: string | null, address: string | null, departureLocation: string | null, arrivalLocation: string | null } | null } };
+export type CreateElementMutation = { createElement: { id: string, name: string, icon: string, description: string, completed: boolean, uri: string, labels: Array<string>, trips: Array<{ id: string }>, location: { id: string, address: string, latitude: number, longitude: number, placeId: string | null } | null, photos: Array<{ id: string, thumbnail: string, regular: string, description: string, type: PhotoType | null }>, schedule: { id: string, allDay: boolean, startDate: string, endDate: string, startTime: string | null, endTime: string | null, startTz: string, endTz: string } | null, metadata: { type: string | null, number: string | null, reservation: string | null, seat: string | null, paymentDetails: string | null, address: string | null, departureLocation: string | null, arrivalLocation: string | null } | null } };
 
 export type CreatePhotoMutationVariables = Exact<{
   input: PhotoInput;
 }>;
 
 
-export type CreatePhotoMutation = { createPhoto: { id: string, thumbnail: string, regular: string, description: string } };
+export type CreatePhotoMutation = { createPhoto: { id: string, thumbnail: string, regular: string, description: string, type: PhotoType | null } };
 
 export type CreateTripMutationVariables = Exact<{
   input: CreateTripInput;
@@ -173,7 +189,7 @@ export type ElementDetailQueryVariables = Exact<{
 }>;
 
 
-export type ElementDetailQuery = { element: { id: string, name: string, icon: string, description: string, completed: boolean, uri: string, labels: Array<string>, trips: Array<{ id: string }>, location: { id: string, address: string, latitude: number, longitude: number, placeId: string | null } | null, photos: Array<{ id: string, thumbnail: string, regular: string, description: string }>, schedule: { id: string, allDay: boolean, startDate: string, endDate: string, startTime: string | null, endTime: string | null, startTz: string, endTz: string } | null, metadata: { type: string | null, number: string | null, reservation: string | null, seat: string | null, paymentDetails: string | null, address: string | null, departureLocation: string | null, arrivalLocation: string | null } | null } };
+export type ElementDetailQuery = { element: { id: string, name: string, icon: string, description: string, completed: boolean, uri: string, labels: Array<string>, trips: Array<{ id: string }>, location: { id: string, address: string, latitude: number, longitude: number, placeId: string | null } | null, photos: Array<{ id: string, thumbnail: string, regular: string, description: string, type: PhotoType | null }>, schedule: { id: string, allDay: boolean, startDate: string, endDate: string, startTime: string | null, endTime: string | null, startTz: string, endTz: string } | null, metadata: { type: string | null, number: string | null, reservation: string | null, seat: string | null, paymentDetails: string | null, address: string | null, departureLocation: string | null, arrivalLocation: string | null } | null } };
 
 export type ElementsQueryVariables = Exact<{
   bounds?: GeoBounds | null | undefined;
@@ -196,7 +212,7 @@ export type ImportShareMutationVariables = Exact<{
 }>;
 
 
-export type ImportShareMutation = { importShare: { id: string, name: string, icon: string, description: string, completed: boolean, uri: string, labels: Array<string>, trips: Array<{ id: string }>, location: { id: string, address: string, latitude: number, longitude: number, placeId: string | null } | null, photos: Array<{ id: string, thumbnail: string, regular: string, description: string }>, schedule: { id: string, allDay: boolean, startDate: string, endDate: string, startTime: string | null, endTime: string | null, startTz: string, endTz: string } | null, metadata: { type: string | null, number: string | null, reservation: string | null, seat: string | null, paymentDetails: string | null, address: string | null, departureLocation: string | null, arrivalLocation: string | null } | null } };
+export type ImportShareMutation = { importShare: { id: string, name: string, icon: string, description: string, completed: boolean, uri: string, labels: Array<string>, trips: Array<{ id: string }>, location: { id: string, address: string, latitude: number, longitude: number, placeId: string | null } | null, photos: Array<{ id: string, thumbnail: string, regular: string, description: string, type: PhotoType | null }>, schedule: { id: string, allDay: boolean, startDate: string, endDate: string, startTime: string | null, endTime: string | null, startTz: string, endTz: string } | null, metadata: { type: string | null, number: string | null, reservation: string | null, seat: string | null, paymentDetails: string | null, address: string | null, departureLocation: string | null, arrivalLocation: string | null } | null } };
 
 export type LoginMutationVariables = Exact<{
   input: LoginInput;
@@ -233,6 +249,14 @@ export type SearchQueryVariables = Exact<{
 
 export type SearchQuery = { elements: Array<{ id: string, name: string, icon: string, labels: Array<string>, location: { id: string, address: string, latitude: number, longitude: number } | null }>, trips: Array<{ id: string, name: string, icon: string, description: string }>, placeSearch: Array<{ placeId: string, name: string, address: string, latitude: number, longitude: number, types: Array<string> | null }> };
 
+export type SearchPhotosQueryVariables = Exact<{
+  query: string;
+  source: PhotoSource;
+}>;
+
+
+export type SearchPhotosQuery = { searchPhotos: Array<{ type: PhotoType, description: string, full: string, regular: string, small: string, thumbnail: string, attributionUrl: string, creditName: string | null, creditUrl: string | null, license: string | null, downloadLocation: string | null }> };
+
 export type TripsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -243,7 +267,14 @@ export type UpdateElementMutationVariables = Exact<{
 }>;
 
 
-export type UpdateElementMutation = { updateElement: { id: string, name: string, icon: string, description: string, completed: boolean, uri: string, labels: Array<string>, trips: Array<{ id: string }>, location: { id: string, address: string, latitude: number, longitude: number, placeId: string | null } | null, photos: Array<{ id: string, thumbnail: string, regular: string, description: string }>, schedule: { id: string, allDay: boolean, startDate: string, endDate: string, startTime: string | null, endTime: string | null, startTz: string, endTz: string } | null, metadata: { type: string | null, number: string | null, reservation: string | null, seat: string | null, paymentDetails: string | null, address: string | null, departureLocation: string | null, arrivalLocation: string | null } | null } };
+export type UpdateElementMutation = { updateElement: { id: string, name: string, icon: string, description: string, completed: boolean, uri: string, labels: Array<string>, trips: Array<{ id: string }>, location: { id: string, address: string, latitude: number, longitude: number, placeId: string | null } | null, photos: Array<{ id: string, thumbnail: string, regular: string, description: string, type: PhotoType | null }>, schedule: { id: string, allDay: boolean, startDate: string, endDate: string, startTime: string | null, endTime: string | null, startTz: string, endTz: string } | null, metadata: { type: string | null, number: string | null, reservation: string | null, seat: string | null, paymentDetails: string | null, address: string | null, departureLocation: string | null, arrivalLocation: string | null } | null } };
+
+export type UpdateElementPhotoMutationVariables = Exact<{
+  input: UpdateElementPhotoInput;
+}>;
+
+
+export type UpdateElementPhotoMutation = { updateElementPhoto: { id: string, description: string } };
 
 export type UpdateTripMutationVariables = Exact<{
   input: TripInput;
@@ -278,6 +309,7 @@ export const CreateElementDocument = gql`
       thumbnail
       regular
       description
+      type
     }
     schedule {
       id
@@ -309,6 +341,7 @@ export const CreatePhotoDocument = gql`
     thumbnail
     regular
     description
+    type
   }
 }
     ` as unknown as DocumentNode<CreatePhotoMutation, CreatePhotoMutationVariables>;
@@ -361,6 +394,7 @@ export const ElementDetailDocument = gql`
       thumbnail
       regular
       description
+      type
     }
     schedule {
       id
@@ -436,6 +470,7 @@ export const ImportShareDocument = gql`
       thumbnail
       regular
       description
+      type
     }
     schedule {
       id
@@ -536,6 +571,23 @@ export const SearchDocument = gql`
   }
 }
     ` as unknown as DocumentNode<SearchQuery, SearchQueryVariables>;
+export const SearchPhotosDocument = gql`
+    query SearchPhotos($query: String!, $source: PhotoSource!) {
+  searchPhotos(query: $query, source: $source) {
+    type
+    description
+    full
+    regular
+    small
+    thumbnail
+    attributionUrl
+    creditName
+    creditUrl
+    license
+    downloadLocation
+  }
+}
+    ` as unknown as DocumentNode<SearchPhotosQuery, SearchPhotosQueryVariables>;
 export const TripsDocument = gql`
     query Trips {
   trips {
@@ -570,6 +622,7 @@ export const UpdateElementDocument = gql`
       thumbnail
       regular
       description
+      type
     }
     schedule {
       id
@@ -594,6 +647,14 @@ export const UpdateElementDocument = gql`
   }
 }
     ` as unknown as DocumentNode<UpdateElementMutation, UpdateElementMutationVariables>;
+export const UpdateElementPhotoDocument = gql`
+    mutation UpdateElementPhoto($input: UpdateElementPhotoInput!) {
+  updateElementPhoto(input: $input) {
+    id
+    description
+  }
+}
+    ` as unknown as DocumentNode<UpdateElementPhotoMutation, UpdateElementPhotoMutationVariables>;
 export const UpdateTripDocument = gql`
     mutation UpdateTrip($input: TripInput!) {
   updateTrip(input: $input) {

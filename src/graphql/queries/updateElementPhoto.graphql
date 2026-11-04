@@ -1,0 +1,6 @@
+mutation UpdateElementPhoto($input: UpdateElementPhotoInput!) {
+  updateElementPhoto(input: $input) {
+    id
+    description
+  }
+}

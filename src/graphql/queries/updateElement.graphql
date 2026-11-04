@@ -22,6 +22,7 @@ mutation UpdateElement($input: ElementInput!) {
       thumbnail
       regular
       description
+      type
     }
     schedule {
       id
