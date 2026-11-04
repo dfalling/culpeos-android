@@ -1,0 +1,9 @@
+query PlaceSearch($query: String!) {
+  placeSearch(query: $query) {
+    placeId
+    name
+    address
+    latitude
+    longitude
+  }
+}

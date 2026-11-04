@@ -4,6 +4,28 @@ type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
 export type Incremental<T> = T | { [P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never };
 import { TypedDocumentNode as DocumentNode } from '@apollo/client';
 import { gql } from '@apollo/client';
+export type CreateElementInput = {
+  completed: boolean;
+  description: string;
+  icon: string;
+  labels?: Array<string> | null | undefined;
+  location?: LocationInput | null | undefined;
+  name: string;
+  /** Ordered list of photo ids (from createPhoto) to attach to the element. */
+  photoIds?: Array<string> | null | undefined;
+  schedule?: ScheduleInput | null | undefined;
+  tripIds?: Array<string> | null | undefined;
+  uri: string;
+};
+
+export type CreateTripInput = {
+  /** Id of a photo (from createPhoto) to use as the banner. If omitted, a default is chosen from the name. */
+  bannerPhotoId?: string | null | undefined;
+  description?: string | null | undefined;
+  name: string;
+  timeZone?: string | null | undefined;
+};
+
 export type ElementInput = {
   completed: boolean;
   description: string;
@@ -101,12 +123,36 @@ export type ScheduleInput = {
   startTz: string;
 };
 
+export type TripInput = {
+  /** Id of a photo to set as the banner. Omit to leave unchanged. */
+  bannerPhotoId?: string | null | undefined;
+  description?: string | null | undefined;
+  icon?: string | null | undefined;
+  id: string;
+  name?: string | null | undefined;
+  timeZone?: string | null | undefined;
+};
+
+export type CreateElementMutationVariables = Exact<{
+  input: CreateElementInput;
+}>;
+
+
+export type CreateElementMutation = { createElement: { id: string, name: string, icon: string, description: string, completed: boolean, uri: string, labels: Array<string>, trips: Array<{ id: string }>, location: { id: string, address: string, latitude: number, longitude: number, placeId: string | null } | null, photos: Array<{ id: string, thumbnail: string, regular: string, description: string }>, schedule: { id: string, allDay: boolean, startDate: string, endDate: string, startTime: string | null, endTime: string | null, startTz: string, endTz: string } | null, metadata: { type: string | null, number: string | null, reservation: string | null, seat: string | null, paymentDetails: string | null, address: string | null, departureLocation: string | null, arrivalLocation: string | null } | null } };
+
 export type CreatePhotoMutationVariables = Exact<{
   input: PhotoInput;
 }>;
 
 
 export type CreatePhotoMutation = { createPhoto: { id: string, thumbnail: string, regular: string, description: string } };
+
+export type CreateTripMutationVariables = Exact<{
+  input: CreateTripInput;
+}>;
+
+
+export type CreateTripMutation = { createTrip: { id: string, name: string, icon: string } };
 
 export type CreateUploadUrlQueryVariables = Exact<{
   bustCache?: number | null | undefined;
@@ -166,6 +212,13 @@ export type LogoutMutationVariables = Exact<{
 
 export type LogoutMutation = { logout: { success: boolean } };
 
+export type PlaceSearchQueryVariables = Exact<{
+  query: string;
+}>;
+
+
+export type PlaceSearchQuery = { placeSearch: Array<{ placeId: string, name: string, address: string, latitude: number, longitude: number }> };
+
 export type RenewTokenMutationVariables = Exact<{
   input: RenewTokenInput;
 }>;
@@ -192,7 +245,63 @@ export type UpdateElementMutationVariables = Exact<{
 
 export type UpdateElementMutation = { updateElement: { id: string, name: string, icon: string, description: string, completed: boolean, uri: string, labels: Array<string>, trips: Array<{ id: string }>, location: { id: string, address: string, latitude: number, longitude: number, placeId: string | null } | null, photos: Array<{ id: string, thumbnail: string, regular: string, description: string }>, schedule: { id: string, allDay: boolean, startDate: string, endDate: string, startTime: string | null, endTime: string | null, startTz: string, endTz: string } | null, metadata: { type: string | null, number: string | null, reservation: string | null, seat: string | null, paymentDetails: string | null, address: string | null, departureLocation: string | null, arrivalLocation: string | null } | null } };
 
+export type UpdateTripMutationVariables = Exact<{
+  input: TripInput;
+}>;
 
+
+export type UpdateTripMutation = { updateTrip: { id: string, name: string, icon: string } };
+
+
+export const CreateElementDocument = gql`
+    mutation CreateElement($input: CreateElementInput!) {
+  createElement(input: $input) {
+    id
+    name
+    icon
+    description
+    completed
+    uri
+    labels
+    trips {
+      id
+    }
+    location {
+      id
+      address
+      latitude
+      longitude
+      placeId
+    }
+    photos {
+      id
+      thumbnail
+      regular
+      description
+    }
+    schedule {
+      id
+      allDay
+      startDate
+      endDate
+      startTime
+      endTime
+      startTz
+      endTz
+    }
+    metadata {
+      type
+      number
+      reservation
+      seat
+      paymentDetails
+      address
+      departureLocation
+      arrivalLocation
+    }
+  }
+}
+    ` as unknown as DocumentNode<CreateElementMutation, CreateElementMutationVariables>;
 export const CreatePhotoDocument = gql`
     mutation CreatePhoto($input: PhotoInput!) {
   createPhoto(input: $input) {
@@ -203,6 +312,15 @@ export const CreatePhotoDocument = gql`
   }
 }
     ` as unknown as DocumentNode<CreatePhotoMutation, CreatePhotoMutationVariables>;
+export const CreateTripDocument = gql`
+    mutation CreateTrip($input: CreateTripInput!) {
+  createTrip(input: $input) {
+    id
+    name
+    icon
+  }
+}
+    ` as unknown as DocumentNode<CreateTripMutation, CreateTripMutationVariables>;
 export const CreateUploadUrlDocument = gql`
     query CreateUploadUrl($bustCache: Int) {
   createUploadUrl(bustCache: $bustCache) {
@@ -363,6 +481,17 @@ export const LogoutDocument = gql`
   }
 }
     ` as unknown as DocumentNode<LogoutMutation, LogoutMutationVariables>;
+export const PlaceSearchDocument = gql`
+    query PlaceSearch($query: String!) {
+  placeSearch(query: $query) {
+    placeId
+    name
+    address
+    latitude
+    longitude
+  }
+}
+    ` as unknown as DocumentNode<PlaceSearchQuery, PlaceSearchQueryVariables>;
 export const RenewTokenDocument = gql`
     mutation RenewToken($input: RenewTokenInput!) {
   renewToken(input: $input) {
@@ -465,3 +594,12 @@ export const UpdateElementDocument = gql`
   }
 }
     ` as unknown as DocumentNode<UpdateElementMutation, UpdateElementMutationVariables>;
+export const UpdateTripDocument = gql`
+    mutation UpdateTrip($input: TripInput!) {
+  updateTrip(input: $input) {
+    id
+    name
+    icon
+  }
+}
+    ` as unknown as DocumentNode<UpdateTripMutation, UpdateTripMutationVariables>;

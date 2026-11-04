@@ -1,8 +1,9 @@
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {ElementDetailScreen} from '../map/ElementDetailScreen';
-import {ElementEditScreen} from '../map/ElementEditScreen';
+import {ElementCreateScreen, ElementEditScreen} from '../map/ElementEditScreen';
 import {MapScreen} from '../map/MapScreen';
 import {ImportShareScreen} from '../share/ImportShareScreen';
+import {TripCreateScreen} from '../trips/TripCreateScreen';
 import type {RootStackParamList} from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -23,6 +24,8 @@ export function RootNavigator() {
       <Stack.Screen name="Map" component={MapScreen} />
       <Stack.Screen name="ElementDetail" component={ElementDetailScreen} />
       <Stack.Screen name="ElementEdit" component={ElementEditScreen} />
+      <Stack.Screen name="ElementCreate" component={ElementCreateScreen} />
+      <Stack.Screen name="TripCreate" component={TripCreateScreen} />
       <Stack.Screen name="ImportShare" component={ImportShareScreen} />
     </Stack.Navigator>
   );

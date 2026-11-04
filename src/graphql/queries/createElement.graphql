@@ -1,0 +1,47 @@
+mutation CreateElement($input: CreateElementInput!) {
+  createElement(input: $input) {
+    id
+    name
+    icon
+    description
+    completed
+    uri
+    labels
+    trips {
+      id
+    }
+    location {
+      id
+      address
+      latitude
+      longitude
+      placeId
+    }
+    photos {
+      id
+      thumbnail
+      regular
+      description
+    }
+    schedule {
+      id
+      allDay
+      startDate
+      endDate
+      startTime
+      endTime
+      startTz
+      endTz
+    }
+    metadata {
+      type
+      number
+      reservation
+      seat
+      paymentDetails
+      address
+      departureLocation
+      arrivalLocation
+    }
+  }
+}
