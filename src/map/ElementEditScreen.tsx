@@ -4,8 +4,6 @@ import {useMemo, useRef, useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -348,9 +346,7 @@ function EditForm({
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={styles.flex}>
+    <View style={styles.flex}>
       <View style={[styles.header, {paddingTop: safeAreaInsets.top + 8}]}>
         <Pressable
           accessibilityRole="button"
@@ -623,7 +619,7 @@ function EditForm({
           </ScrollView>
         )}
       </Sheet>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 

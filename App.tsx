@@ -10,7 +10,14 @@ import {
   useNavigationContainerRef,
 } from '@react-navigation/native';
 import {useCallback, useEffect} from 'react';
-import {ActivityIndicator, StatusBar, StyleSheet, View} from 'react-native';
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  StatusBar,
+  StyleSheet,
+  View,
+} from 'react-native';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {apolloClient} from './src/auth/authClient';
 import {useDeepLinkListener} from './src/auth/deepLinks';
@@ -26,6 +33,13 @@ import {
 import {useNavigationTheme} from './src/theme/navigationTheme';
 import {useTheme} from './src/theme/useTheme';
 
+// Android 15 (API 35) enforces edge-to-edge for apps targeting SDK 35+, and
+// under edge-to-edge adjustResize no longer shrinks the window for the keyboard.
+// Below API 35 the window still resizes, so avoidance there would double up.
+const avoidKeyboard =
+  Platform.OS === 'ios' ||
+  (Platform.OS === 'android' && Platform.Version >= 35);
+
 function App() {
   const theme = useTheme();
 
@@ -35,7 +49,17 @@ function App() {
         <StatusBar
           barStyle={theme.scheme === 'dark' ? 'light-content' : 'dark-content'}
         />
-        <AppContent />
+        {/*
+          Screens don't add their own avoider: the whole tree shrinks here,
+          which also lifts absolutely positioned sheets that padding inside a
+          screen would leave behind the keyboard.
+        */}
+        <KeyboardAvoidingView
+          enabled={avoidKeyboard}
+          behavior="padding"
+          style={[styles.container, {backgroundColor: theme.canvas}]}>
+          <AppContent />
+        </KeyboardAvoidingView>
       </SafeAreaProvider>
     </ApolloProvider>
   );
