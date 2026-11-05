@@ -80,9 +80,9 @@ export function LoginScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={styles.flex}>
+    // Padding on Android too: edge-to-edge (forced at targetSdk 36) stops
+    // adjustResize from shrinking the window. See ElementEditScreen.
+    <KeyboardAvoidingView behavior="padding" style={styles.flex}>
       <View style={styles.container}>
         <Text style={styles.title}>{t.login.title}</Text>
 

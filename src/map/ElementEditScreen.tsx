@@ -5,7 +5,6 @@ import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -348,9 +347,11 @@ function EditForm({
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={styles.flex}>
+    // Padding on Android too: targetSdk 36 forces edge-to-edge on Android 15+,
+    // where adjustResize no longer shrinks the window, so nothing else lifts the
+    // form above the keyboard. Where the window does still resize, the view
+    // already ends at the keyboard's top and the computed padding is zero.
+    <KeyboardAvoidingView behavior="padding" style={styles.flex}>
       <View style={[styles.header, {paddingTop: safeAreaInsets.top + 8}]}>
         <Pressable
           accessibilityRole="button"
