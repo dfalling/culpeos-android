@@ -2,7 +2,6 @@ import {useMutation} from '@apollo/client/react';
 import {useMemo, useState} from 'react';
 import {
   ActivityIndicator,
-  KeyboardAvoidingView,
   Platform,
   Pressable,
   StyleSheet,
@@ -80,9 +79,7 @@ export function LoginScreen() {
   }
 
   return (
-    // Padding on Android too: edge-to-edge (forced at targetSdk 36) stops
-    // adjustResize from shrinking the window. See ElementEditScreen.
-    <KeyboardAvoidingView behavior="padding" style={styles.flex}>
+    <View style={styles.flex}>
       <View style={styles.container}>
         <Text style={styles.title}>{t.login.title}</Text>
 
@@ -129,7 +126,7 @@ export function LoginScreen() {
           )}
         </Pressable>
       </View>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
