@@ -20,19 +20,21 @@
       "allowedVersions": "<8.0.0"
     },
     {
-      "description": "Group the React Native core and its tooling — they are pinned to the same release and must bump atomically",
+      "description": "Group the React Native core and its tooling — they are pinned to the same release and must bump atomically. The post-upgrade task then pins react/react-test-renderer to the renderer the new react-native bundles (see the react rule below). The command must match RENOVATE_ALLOWED_COMMANDS in dfalling/renovate's workflow, or Renovate refuses to run it and reports an artifact error on the PR.",
       "matchPackageNames": [
         "react-native",
         "/^@react-native\\//",
         "/^@react-native-community\\//"
       ],
       "groupName": "react-native",
-      "prBodyNotes": [
-        ":warning: `react` and `react-test-renderer` are coupled to this release but are **not** in this group — they must exactly match the react-native-renderer bundled in react-native, a version Renovate can't read, so they're pinned by hand (mismatch crashes the app at launch). Read the bundled version with `grep -rhoE '19\\.[0-9.]+' node_modules/react-native/Libraries/Renderer/implementations/ReactFabric-prod.js | sort -u`, set both packages in `package.json` to that exact version, and run `bun install`."
-      ]
+      "postUpgradeTasks": {
+        "commands": ["bun run renovate:post-upgrade"],
+        "fileFilters": ["package.json", "bun.lock"],
+        "executionMode": "branch"
+      }
     },
     {
-      "description": "Do not bump react/react-test-renderer on their own — they must exactly match the react-native-renderer bundled in react-native. React asserts that equality at runtime, but react-native only declares a loose peer range (e.g. ^19.2.3), so Renovate would otherwise raise react past the bundled renderer and crash the app at launch (this happened: react 19.2.7 vs renderer 19.2.3). Renovate cannot read the bundled renderer version, so these are pinned and updated by hand together with the react-native upgrade.",
+      "description": "Do not bump react/react-test-renderer on their own — they must exactly match the react-native-renderer bundled in react-native. React asserts that equality at runtime, but react-native only declares a loose peer range (e.g. ^19.2.3), so Renovate would otherwise raise react past the bundled renderer and crash the app at launch (this happened: react 19.2.7 vs renderer 19.2.3). Renovate cannot read the bundled renderer version as a datasource, so instead the react-native group's postUpgradeTasks reads it from the installed renderer (scripts/react-renderer-version.js) and pins both packages in the same PR. __tests__/reactRendererVersion.test.js fails CI if they ever drift.",
       "matchPackageNames": ["react", "react-test-renderer"],
       "enabled": false
     },
