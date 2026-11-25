@@ -52,6 +52,12 @@
       "description": "Group all React Navigation packages together",
       "matchPackageNames": ["/^@react-navigation\\//"],
       "groupName": "react-navigation"
+    },
+    {
+      "description": "Auto-merge minor and patch updates, but only after the standard 3-day wait. minimumReleaseAge adds a pending renovate/stability-days status check to each PR that only turns passing once the newest release in the update is 3 days old, so the branch cannot go green and the merge cannot fire before then. The merge itself is GitHub's native auto-merge (the repo's allow_auto_merge setting is on), gated by main's required status checks 'JS checks' and 'Android assembleDebug'. Majors stay out of scope and open a normal PR for manual review; the pins above (gradle, @babel/*, java) and the disabled react/react-test-renderer rule keep the historically dangerous bumps from reaching automerge at all.",
+      "matchUpdateTypes": ["minor", "patch"],
+      "minimumReleaseAge": "3 days",
+      "automerge": true
     }
   ]
 }
